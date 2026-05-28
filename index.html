@@ -689,7 +689,6 @@ onAuthStateChanged(auth, user => {
 function setupUI(user) {
   const name = user.displayName ? user.displayName.split(' ')[0] : 'Familia';
   const h = new Date().getHours();
-  const greet = h<13?'¡Buenos días':'h<20?'¡Buenas tardes':'¡Buenas noches';
   document.getElementById('headerGreeting').textContent = (h<13?'¡Buenos días ':h<20?'¡Buenas tardes ':'¡Buenas noches ') + name + '!';
   document.getElementById('headerTitle').textContent = 'FamilyHub';
 
