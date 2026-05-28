@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FamilyHub">
+<title>FamilyHub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f6fb;
+  --card: #ffffff;
+  --text: #1a1a2e;
+  --text2: #7c8db5;
+  --border: #e8ecf4;
+  --primary: #5c6ef8;
+  --primary2: #7c3aed;
+  --shadow: 0 2px 12px rgba(92,110,248,0.10);
+  --shadow-lg: 0 8px 32px rgba(92,110,248,0.15);
+
+  --medico: #2196F3;
+  --medico-bg: #e3f2fd;
+  --deporte: #FF9800;
+  --deporte-bg: #fff3e0;
+  --nino: #00BCD4;
+  --nino-bg: #e0f7fa;
+  --colegio: #9C27B0;
+  --colegio-bg: #f3e5f5;
+  --compra: #E91E63;
+  --compra-bg: #fce4ec;
+  --familia: #3F51B5;
+  --familia-bg: #e8eaf6;
+  --cumple: #FFC107;
+  --cumple-bg: #fff8e1;
+  --otros: #607D8B;
+  --otros-bg: #eceff1;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'Nunito Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+  overflow-x: hidden;
+}
+
+h1,h2,h3,h4,.font-display { font-family: 'Nunito', sans-serif; }
+
+/* ── LOADING ── */
+#loading {
+  position: fixed; inset: 0;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 9999; gap: 16px;
+}
+.loading-logo { font-family:'Nunito',sans-serif; font-size:36px; font-weight:900; color:#fff; letter-spacing:-1px; }
+.loading-logo span { color: #5c6ef8; }
+.loading-sub { font-size:14px; color:rgba(255,255,255,0.5); }
+.spinner { width:36px;height:36px;border:3px solid rgba(255,255,255,0.15);border-top-color:#5c6ef8;border-radius:50%;animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── AUTH SCREEN ── */
+#authScreen {
+  position: fixed; inset: 0;
+  background: linear-gradient(160deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 24px; z-index: 1000; gap: 0;
+}
+.auth-logo { font-family:'Nunito',sans-serif; font-size:48px; font-weight:900; color:#fff; letter-spacing:-2px; margin-bottom:8px; }
+.auth-logo span { color:#5c6ef8; }
+.auth-tagline { font-size:15px; color:rgba(255,255,255,0.55); text-align:center; margin-bottom:48px; line-height:1.5; }
+.auth-card {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 24px;
+  padding: 32px 24px;
+  width: 100%; max-width: 360px;
+  backdrop-filter: blur(20px);
+  text-align: center;
+}
+.auth-card h2 { font-family:'Nunito',sans-serif; color:#fff; font-size:22px; font-weight:800; margin-bottom:8px; }
+.auth-card p { color:rgba(255,255,255,0.5); font-size:13px; margin-bottom:28px; line-height:1.6; }
+.btn-google {
+  display:flex; align-items:center; justify-content:center; gap:12px;
+  background:#fff; color:#1a1a2e;
+  border:none; border-radius:14px;
+  padding:14px 24px; width:100%;
+  font-family:'Nunito',sans-serif; font-size:15px; font-weight:700;
+  cursor:pointer; transition:all 0.2s;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+.btn-google:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.3); }
+.btn-google img { width:20px; height:20px; }
+.auth-note { font-size:11px; color:rgba(255,255,255,0.3); margin-top:16px; line-height:1.5; }
+
+/* ── HEADER ── */
+.header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+  padding: 48px 20px 20px;
+  position: sticky; top: 0; z-index: 50;
+}
+.header-top { display:flex; justify-content:space-between; align-items:flex-start; }
+.header-greeting { font-size:12px; color:rgba(255,255,255,0.5); font-weight:600; letter-spacing:0.5px; text-transform:uppercase; }
+.header-title { font-family:'Nunito',sans-serif; font-size:26px; font-weight:900; color:#fff; margin-top:2px; letter-spacing:-0.5px; }
+.header-date { font-size:12px; color:rgba(255,255,255,0.45); margin-top:3px; }
+.header-right { display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+.avatars { display:flex; }
+.avatar {
+  width:36px; height:36px; border-radius:50%;
+  border:2px solid rgba(255,255,255,0.3);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Nunito',sans-serif; font-size:14px; font-weight:800; color:#fff;
+  margin-left:-8px;
+}
+.avatar:first-child { margin-left:0; }
+.sync-pill {
+  display:flex; align-items:center; gap:5px;
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:20px; padding:4px 10px;
+  font-size:10px; font-weight:700; color:rgba(255,255,255,0.6);
+  letter-spacing:0.3px;
+}
+.sync-dot { width:6px;height:6px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+/* ── MAIN CONTENT ── */
+.main {
+  padding: 16px 16px 90px;
+  min-height: calc(100vh - 160px);
+}
+
+/* ── SCREENS ── */
+.screen { display:none; }
+.screen.active { display:block; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── SECTION LABELS ── */
+.section-label {
+  font-size:11px; font-weight:800;
+  text-transform:uppercase; letter-spacing:1px;
+  color:var(--text2); margin:20px 0 10px;
+}
+.section-label:first-child { margin-top:0; }
+
+/* ── SUMMARY CARDS ── */
+.summary-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:4px; }
+.summary-card {
+  border-radius:18px; padding:16px;
+  color:#fff; position:relative; overflow:hidden;
+}
+.summary-card h3 { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; opacity:0.75; margin-bottom:6px; }
+.summary-card .big { font-family:'Nunito',sans-serif; font-size:30px; font-weight:900; line-height:1; }
+.summary-card .big span { font-size:14px; font-weight:600; opacity:0.8; }
+.summary-card .small { font-size:11px; opacity:0.7; margin-top:4px; }
+.summary-card::after { content:''; position:absolute; right:-10px; bottom:-10px; width:60px; height:60px; border-radius:50%; background:rgba(255,255,255,0.1); }
+.s-today { background:linear-gradient(135deg,#5c6ef8,#7c3aed); grid-column:1/-1; }
+.s-tasks { background:linear-gradient(135deg,#06b6d4,#0ea5e9); }
+.s-compra { background:linear-gradient(135deg,#f43f5e,#e11d48); }
+
+/* ── EVENT CARD ── */
+.event-card {
+  background:var(--card);
+  border-radius:16px;
+  padding:13px 14px;
+  margin-bottom:8px;
+  display:flex; align-items:center; gap:12px;
+  box-shadow:var(--shadow);
+  cursor:pointer; transition:transform 0.15s, box-shadow 0.15s;
+  border: 1px solid var(--border);
+}
+.event-card:active { transform:scale(0.98); }
+.event-stripe { width:4px; height:44px; border-radius:4px; flex-shrink:0; }
+.event-time { font-size:11px; color:var(--text2); font-weight:700; min-width:38px; text-align:center; line-height:1.3; }
+.event-body { flex:1; min-width:0; }
+.event-title { font-family:'Nunito',sans-serif; font-size:14px; font-weight:800; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.event-sub { font-size:11px; color:var(--text2); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.event-badge {
+  font-size:10px; font-weight:700; padding:3px 8px;
+  border-radius:20px; flex-shrink:0;
+  text-transform:uppercase; letter-spacing:0.3px;
+}
+.event-actions { display:flex; gap:6px; }
+.btn-icon {
+  width:28px; height:28px; border-radius:8px;
+  border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-size:13px; transition:background 0.15s;
+}
+.btn-del { background:#fee2e2; color:#ef4444; }
+.btn-del:hover { background:#fecaca; }
+
+/* ── WEEK STRIP ── */
+.week-strip { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:4px; }
+.week-strip::-webkit-scrollbar { display:none; }
+.wday {
+  flex-shrink:0; width:48px;
+  background:var(--card); border-radius:14px;
+  padding:10px 4px; text-align:center;
+  box-shadow:var(--shadow); cursor:pointer;
+  border:1px solid var(--border); transition:all 0.15s;
+}
+.wday.active { background:linear-gradient(135deg,#5c6ef8,#7c3aed); border-color:transparent; }
+.wday .wn { font-size:10px; font-weight:700; color:var(--text2); text-transform:uppercase; }
+.wday.active .wn { color:rgba(255,255,255,0.75); }
+.wday .wd { font-family:'Nunito',sans-serif; font-size:20px; font-weight:900; color:var(--text); margin:2px 0; }
+.wday.active .wd { color:#fff; }
+.wday .wdots { display:flex; justify-content:center; gap:2px; min-height:7px; }
+.wday .wdot { width:5px;height:5px;border-radius:50%; }
+
+/* ── TASK CARD ── */
+.task-card {
+  background:var(--card); border-radius:16px;
+  padding:13px 14px; margin-bottom:8px;
+  display:flex; align-items:center; gap:12px;
+  box-shadow:var(--shadow); border:1px solid var(--border);
+}
+.task-check {
+  width:24px;height:24px;border-radius:50%;
+  border:2.5px solid var(--border); flex-shrink:0;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:all 0.2s; background:#fff;
+}
+.task-check.done { background:#4ade80; border-color:#4ade80; }
+.task-check.done::after { content:'✓'; color:#fff; font-size:13px; font-weight:800; }
+.task-text { flex:1; font-size:14px; font-weight:600; color:var(--text); }
+.task-text.done { text-decoration:line-through; color:var(--text2); }
+.task-who { font-size:10px; font-weight:700; color:var(--text2); background:var(--bg); padding:3px 8px; border-radius:20px; }
+
+/* ── COMPRA ── */
+.compra-section { background:var(--card); border-radius:18px; overflow:hidden; margin-bottom:10px; box-shadow:var(--shadow); border:1px solid var(--border); }
+.compra-header { padding:14px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); }
+.compra-header h3 { font-family:'Nunito',sans-serif; font-size:15px; font-weight:800; }
+.compra-count { font-size:12px; color:var(--text2); font-weight:600; }
+.compra-item {
+  padding:12px 16px; display:flex; align-items:center; gap:12px;
+  border-bottom:1px solid var(--border); transition:background 0.15s;
+}
+.compra-item:last-child { border-bottom:none; }
+.compra-check {
+  width:22px; height:22px; border-radius:6px;
+  border:2px solid var(--border); flex-shrink:0;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:all 0.2s;
+}
+.compra-check.done { background:#f43f5e; border-color:#f43f5e; }
+.compra-check.done::after { content:'✓'; color:#fff; font-size:11px; font-weight:800; }
+.compra-name { flex:1; font-size:14px; font-weight:600; }
+.compra-name.done { text-decoration:line-through; color:var(--text2); }
+.compra-qty { font-size:12px; color:var(--text2); font-weight:700; }
+
+/* ── CALENDAR ── */
+.cal-nav-row { display:flex; justify-content:space-between; align-items:center; background:var(--card); border-radius:16px; padding:14px 16px; margin-bottom:10px; box-shadow:var(--shadow); border:1px solid var(--border); }
+.cal-nav-btn { width:32px;height:32px;border-radius:10px;background:var(--bg);border:none;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;color:var(--text); }
+.cal-month { font-family:'Nunito',sans-serif; font-size:17px; font-weight:900; }
+.cal-grid-wrap { background:var(--card); border-radius:18px; padding:14px; box-shadow:var(--shadow); border:1px solid var(--border); margin-bottom:10px; }
+.cal-dow { display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:8px; }
+.cal-dow span { text-align:center; font-size:11px; font-weight:800; color:var(--text2); padding:4px 0; }
+.cal-days-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.cday { aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:5px; border-radius:10px; cursor:pointer; transition:background 0.1s; }
+.cday:hover { background:var(--bg); }
+.cday.today { background:linear-gradient(135deg,#5c6ef8,#7c3aed); }
+.cday.other { opacity:0.3; }
+.cday .cn { font-family:'Nunito',sans-serif; font-size:13px; font-weight:800; color:var(--text); }
+.cday.today .cn { color:#fff; }
+.cday .cdots { display:flex; gap:2px; margin-top:2px; flex-wrap:wrap; justify-content:center; }
+.cday .cdot { width:4px;height:4px;border-radius:50%; }
+.legend-wrap { background:var(--card); border-radius:16px; padding:14px 16px; box-shadow:var(--shadow); border:1px solid var(--border); }
+.legend-title { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:var(--text2); margin-bottom:10px; }
+.legend-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.leg-item { display:flex; align-items:center; gap:8px; }
+.leg-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0; }
+.leg-label { font-size:12px; font-weight:700; color:var(--text); }
+
+/* ── FAB ── */
+.fab {
+  position:fixed; bottom:84px; right:16px;
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,#5c6ef8,#7c3aed);
+  box-shadow:0 6px 24px rgba(92,110,248,0.5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;color:#fff;border:none;cursor:pointer;
+  z-index:90; transition:transform 0.15s;
+}
+.fab:active { transform:scale(0.92); }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position:fixed; bottom:0;left:0;right:0;
+  max-width:480px; margin:0 auto;
+  background:rgba(255,255,255,0.95);
+  backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  display:flex; padding:8px 0 20px;
+  z-index:100;
+}
+.nav-btn {
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+  background:none; border:none; cursor:pointer; padding:4px 0;
+  transition:transform 0.1s;
+}
+.nav-btn:active { transform:scale(0.9); }
+.nav-icon { font-size:22px; line-height:1; position:relative; }
+.nav-badge { position:absolute;top:-4px;right:-8px;width:16px;height:16px;border-radius:50%;background:#f43f5e;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center; }
+.nav-label { font-size:10px; font-weight:700; color:var(--text2); letter-spacing:0.3px; }
+.nav-btn.active .nav-label { color:var(--primary); }
+
+/* ── MODAL ── */
+.modal-bg {
+  position:fixed;inset:0;background:rgba(0,0,0,0.5);
+  z-index:200; display:none; align-items:flex-end;
+  backdrop-filter:blur(4px);
+}
+.modal-bg.open { display:flex; }
+.modal {
+  width:100%;max-width:480px;margin:0 auto;
+  background:#fff; border-radius:28px 28px 0 0;
+  padding:20px 20px 40px;
+  animation:slideUp 0.28s cubic-bezier(0.34,1.56,0.64,1);
+  max-height:90vh; overflow-y:auto;
+}
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.modal-handle { width:40px;height:4px;background:#e5e7eb;border-radius:2px;margin:0 auto 18px; }
+.modal-title { font-family:'Nunito',sans-serif; font-size:20px; font-weight:900; margin-bottom:18px; color:var(--text); }
+.field { margin-bottom:14px; }
+.field label { display:block; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.7px; color:var(--text2); margin-bottom:6px; }
+.field input, .field select, .field textarea {
+  width:100%; padding:12px 14px;
+  border:1.5px solid var(--border); border-radius:12px;
+  font-size:14px; font-family:'Nunito Sans',sans-serif;
+  color:var(--text); outline:none; background:#fff;
+  transition:border-color 0.2s;
+}
+.field input:focus, .field select:focus, .field textarea:focus { border-color:var(--primary); }
+.pills { display:flex; flex-wrap:wrap; gap:8px; }
+.pill {
+  padding:7px 14px; border-radius:20px;
+  font-size:12px; font-weight:700;
+  cursor:pointer; border:2px solid transparent;
+  transition:all 0.15s; font-family:'Nunito',sans-serif;
+}
+.pill.sel { border-color:currentColor; transform:scale(1.05); }
+.modal-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.btn-save {
+  width:100%;padding:15px;
+  background:linear-gradient(135deg,#5c6ef8,#7c3aed);
+  color:#fff;border:none;border-radius:14px;
+  font-family:'Nunito',sans-serif;font-size:16px;font-weight:800;
+  cursor:pointer;margin-top:10px;transition:transform 0.15s;
+  letter-spacing:0.3px;
+}
+.btn-save:active { transform:scale(0.98); }
+.type-tabs { display:flex; gap:8px; margin-bottom:16px; }
+.type-tab {
+  flex:1;padding:10px;border-radius:12px;border:2px solid var(--border);
+  background:#fff;cursor:pointer;text-align:center;
+  font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;
+  color:var(--text2);transition:all 0.15s;
+}
+.type-tab.active { border-color:var(--primary);color:var(--primary);background:#eef0ff; }
+
+/* ── EMPTY STATE ── */
+.empty { text-align:center; padding:40px 20px; color:var(--text2); }
+.empty .emoji { font-size:48px; margin-bottom:12px; }
+.empty p { font-size:14px; font-weight:600; }
+
+/* ── DELETE confirm ── */
+.confirm-bg { position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;display:none;align-items:center;justify-content:center;padding:20px; }
+.confirm-bg.open { display:flex; }
+.confirm-card { background:#fff;border-radius:20px;padding:24px;width:100%;max-width:320px;text-align:center; }
+.confirm-card h3 { font-family:'Nunito',sans-serif;font-size:18px;font-weight:800;margin-bottom:8px; }
+.confirm-card p { font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.5; }
+.confirm-btns { display:flex;gap:10px; }
+.btn-cancel { flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;font-size:14px; }
+.btn-confirm-del { flex:1;padding:12px;border-radius:12px;border:none;background:#ef4444;color:#fff;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:800;font-size:14px; }
+
+/* ── TOAST ── */
+.toast {
+  position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);
+  background:#1a1a2e;color:#fff;padding:12px 20px;border-radius:14px;
+  font-size:13px;font-weight:700;z-index:999;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  white-space:nowrap; box-shadow:0 8px 24px rgba(0,0,0,0.3);
+}
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+/* ── UTIL ── */
+.mt8 { margin-top:8px; }
+.flex-between { display:flex;justify-content:space-between;align-items:center; }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="loading-logo">Family<span>Hub</span></div>
+  <div class="spinner"></div>
+  <div class="loading-sub">Cargando tu familia…</div>
+</div>
+
+<!-- AUTH -->
+<div id="authScreen">
+  <div class="auth-logo">Family<span>Hub</span></div>
+  <div class="auth-tagline">El organizador familiar que siempre<br>quisisteis tener 🏠</div>
+  <div class="auth-card">
+    <h2>Bienvenidos 👋</h2>
+    <p>Inicia sesión con Google para acceder y sincronizar con tu familia en tiempo real.</p>
+    <button class="btn-google" onclick="signInWithGoogle()">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Continuar con Google
+    </button>
+    <div class="auth-note">Al entrar, aceptas compartir los datos con los miembros de tu familia que uses en esta app.</div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header" id="mainHeader" style="display:none">
+  <div class="header-top">
+    <div>
+      <div class="header-greeting" id="headerGreeting">¡Buenos días!</div>
+      <div class="header-title" id="headerTitle">FamilyHub</div>
+      <div class="header-date" id="headerDate"></div>
+    </div>
+    <div class="header-right">
+      <div class="avatars" id="userAvatars"></div>
+      <div class="sync-pill"><div class="sync-dot"></div><span id="syncStatus">Sincronizado</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="mainContent" style="display:none">
+
+  <!-- HOY -->
+  <div class="screen active" id="screen-hoy">
+    <div class="summary-row">
+      <div class="summary-card s-today">
+        <h3>Hoy tienes</h3>
+        <div class="big" id="todayCount">0 <span>eventos</span></div>
+        <div class="small" id="todayTaskCount">Cargando…</div>
+      </div>
+      <div class="summary-card s-tasks">
+        <h3>Tareas</h3>
+        <div class="big" id="pendingTasksCount">0 <span>pend.</span></div>
+        <div class="small">Sin fecha</div>
+      </div>
+      <div class="summary-card s-compra">
+        <h3>Compra</h3>
+        <div class="big" id="compraCount">0 <span>items</span></div>
+        <div class="small">Por coger</div>
+      </div>
+    </div>
+
+    <div class="section-label">Eventos de hoy</div>
+    <div id="todayEvents"></div>
+
+    <div class="section-label">Esta semana</div>
+    <div class="week-strip" id="weekStrip"></div>
+    <div id="weekEvents"></div>
+  </div>
+
+  <!-- CALENDARIO -->
+  <div class="screen" id="screen-calendario">
+    <div class="cal-nav-row">
+      <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+      <div class="cal-month" id="calTitle">Mayo 2025</div>
+      <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="cal-grid-wrap">
+      <div class="cal-dow"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+      <div class="cal-days-grid" id="calGrid"></div>
+    </div>
+    <div class="legend-wrap mt8">
+      <div class="legend-title">Categorías</div>
+      <div class="legend-grid">
+        <div class="leg-item"><div class="leg-dot" style="background:var(--medico)"></div><div class="leg-label">Médico</div></div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--deporte)"></div><div class="leg-label">Deporte</div></div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--nino)"></div><div class="leg-label">Actividades niño</div></div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--colegio)"></div><div class="leg-label">Colegio</div></div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--compra)"></div><div class="leg-label">Compra / Recados</div></div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--familia)"></div><div class="leg-label">Familia</div></div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--cumple)"></div><div class="leg-label">Cumpleaños 🎂</div></div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--otros)"></div><div class="leg-label">Otros</div></div>
+      </div>
+    </div>
+    <div class="section-label mt8">Próximos eventos</div>
+    <div id="upcomingEvents"></div>
+  </div>
+
+  <!-- TAREAS -->
+  <div class="screen" id="screen-tareas">
+    <div class="section-label">Pendientes</div>
+    <div id="taskList"></div>
+    <div class="section-label">Completadas hoy ✓</div>
+    <div id="doneTaskList"></div>
+  </div>
+
+  <!-- COMPRA -->
+  <div class="screen" id="screen-compra">
+    <div class="section-label">Por coger</div>
+    <div class="compra-section">
+      <div id="compraList"></div>
+    </div>
+    <div class="section-label">En el carro ✓</div>
+    <div class="compra-section">
+      <div id="compraDoneList"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fabBtn" style="display:none" onclick="openModal()">+</button>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav" id="bottomNav" style="display:none">
+  <button class="nav-btn active" onclick="showScreen('hoy',this)">
+    <span class="nav-icon">🏠</span>
+    <span class="nav-label">Hoy</span>
+  </button>
+  <button class="nav-btn" onclick="showScreen('calendario',this)">
+    <span class="nav-icon">📅</span>
+    <span class="nav-label">Calendario</span>
+  </button>
+  <button class="nav-btn" onclick="showScreen('tareas',this)">
+    <span class="nav-icon" style="position:relative;display:inline-block">✅<span class="nav-badge" id="taskBadge" style="display:none">0</span></span>
+    <span class="nav-label">Tareas</span>
+  </button>
+  <button class="nav-btn" onclick="showScreen('compra',this)">
+    <span class="nav-icon" style="position:relative;display:inline-block">🛒<span class="nav-badge" id="compraBadge" style="display:none">0</span></span>
+    <span class="nav-label">Compra</span>
+  </button>
+</div>
+
+<!-- MODAL AÑADIR -->
+<div class="modal-bg" id="modalBg" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitleText">➕ Añadir</div>
+    <div class="type-tabs">
+      <div class="type-tab active" onclick="setModalType('evento',this)">📅 Evento</div>
+      <div class="type-tab" onclick="setModalType('tarea',this)">✅ Tarea</div>
+      <div class="type-tab" onclick="setModalType('compra',this)">🛒 Compra</div>
+    </div>
+
+    <div id="formEvento">
+      <div class="field">
+        <label>Descripción</label>
+        <input type="text" id="evDesc" placeholder="¿Qué evento es?">
+      </div>
+      <div class="field">
+        <label>Notas (opcional)</label>
+        <input type="text" id="evNotes" placeholder="Centro de salud, aula 2B…">
+      </div>
+      <div class="modal-row">
+        <div class="field">
+          <label>Fecha</label>
+          <input type="date" id="evDate">
+        </div>
+        <div class="field">
+          <label>Hora</label>
+          <input type="time" id="evTime">
+        </div>
+      </div>
+      <div class="field">
+        <label>Categoría</label>
+        <div class="pills" id="catPills">
+          <div class="pill sel" style="background:var(--medico-bg);color:var(--medico)" onclick="selCat(this,'medico')">🏥 Médico</div>
+          <div class="pill" style="background:var(--deporte-bg);color:var(--deporte)" onclick="selCat(this,'deporte')">⚽ Deporte</div>
+          <div class="pill" style="background:var(--nino-bg);color:var(--nino)" onclick="selCat(this,'nino')">👦 Niño</div>
+          <div class="pill" style="background:var(--colegio-bg);color:var(--colegio)" onclick="selCat(this,'colegio')">🎒 Colegio</div>
+          <div class="pill" style="background:var(--familia-bg);color:var(--familia)" onclick="selCat(this,'familia')">👨‍👩‍👦 Familia</div>
+          <div class="pill" style="background:var(--cumple-bg);color:var(--cumple)" onclick="selCat(this,'cumple')">🎂 Cumpleaños</div>
+          <div class="pill" style="background:var(--otros-bg);color:var(--otros)" onclick="selCat(this,'otros')">📌 Otros</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="formTarea" style="display:none">
+      <div class="field">
+        <label>Tarea</label>
+        <input type="text" id="taDesc" placeholder="¿Qué hay que hacer?">
+      </div>
+      <div class="field">
+        <label>¿Quién? (opcional)</label>
+        <input type="text" id="taWho" placeholder="Papá, Mamá, Los dos…">
+      </div>
+    </div>
+
+    <div id="formCompra" style="display:none">
+      <div class="field">
+        <label>Artículo</label>
+        <input type="text" id="coDesc" placeholder="¿Qué hay que comprar?">
+      </div>
+      <div class="modal-row">
+        <div class="field">
+          <label>Cantidad</label>
+          <input type="text" id="coQty" placeholder="1, 2 kg, 1 bolsa…">
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-save" onclick="saveItem()">Guardar y sincronizar 🔄</button>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="confirm-bg" id="confirmBg">
+  <div class="confirm-card">
+    <h3>¿Eliminar?</h3>
+    <p id="confirmMsg">Esta acción no se puede deshacer.</p>
+    <div class="confirm-btns">
+      <button class="btn-cancel" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn-confirm-del" onclick="confirmDelete()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ── CONFIG ──
+const firebaseConfig = {
+  apiKey: "AIzaSyBzXbk5pxVTnHreNraV0HzVEpOm1ZycZdw",
+  authDomain: "family-hub-65434.firebaseapp.com",
+  projectId: "family-hub-65434",
+  storageBucket: "family-hub-65434.firebasestorage.app",
+  messagingSenderId: "831257607322",
+  appId: "1:831257607322:web:d6e9843377060220c0f323"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+// ── STATE ──
+let allEvents = [], allTasks = [], allCompra = [];
+let calDate = new Date();
+let selectedCat = 'medico';
+let modalType = 'evento';
+let deleteTarget = null;
+let unsubFns = [];
+
+// ── AUTH ──
+window.signInWithGoogle = async () => {
+  try { await signInWithPopup(auth, provider); }
+  catch(e) { showToast('❌ Error al iniciar sesión'); }
+};
+
+onAuthStateChanged(auth, user => {
+  document.getElementById('loading').style.display = 'none';
+  if (user) {
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('mainHeader').style.display = 'block';
+    document.getElementById('mainContent').style.display = 'block';
+    document.getElementById('fabBtn').style.display = 'flex';
+    document.getElementById('bottomNav').style.display = 'flex';
+    setupUI(user);
+    subscribeData();
+  } else {
+    document.getElementById('authScreen').style.display = 'flex';
+    document.getElementById('mainHeader').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'none';
+    document.getElementById('fabBtn').style.display = 'none';
+    document.getElementById('bottomNav').style.display = 'none';
+    unsubFns.forEach(u=>u()); unsubFns=[];
+  }
+});
+
+function setupUI(user) {
+  const name = user.displayName ? user.displayName.split(' ')[0] : 'Familia';
+  const h = new Date().getHours();
+  const greet = h<13?'¡Buenos días':'h<20?'¡Buenas tardes':'¡Buenas noches';
+  document.getElementById('headerGreeting').textContent = (h<13?'¡Buenos días ':h<20?'¡Buenas tardes ':'¡Buenas noches ') + name + '!';
+  document.getElementById('headerTitle').textContent = 'FamilyHub';
+
+  const days = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const now = new Date();
+  document.getElementById('headerDate').textContent =
+    days[now.getDay()].charAt(0).toUpperCase()+days[now.getDay()].slice(1)+', '+now.getDate()+' de '+months[now.getMonth()]+' de '+now.getFullYear();
+
+  const initials = (user.displayName||'?').split(' ').map(w=>w[0]).slice(0,2).join('');
+  const colors = ['#f093fb','#4facfe','#43e97b','#fa709a'];
+  const c = colors[Math.floor(Math.random()*colors.length)];
+  document.getElementById('userAvatars').innerHTML =
+    `<div class="avatar" style="background:${c}" title="${user.displayName||user.email}">${initials}</div>`;
+}
+
+function subscribeData() {
+  const evQ = query(collection(db,'events'), orderBy('date','asc'));
+  unsubFns.push(onSnapshot(evQ, snap => {
+    allEvents = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderAll();
+  }));
+  const taQ = query(collection(db,'tasks'), orderBy('createdAt','asc'));
+  unsubFns.push(onSnapshot(taQ, snap => {
+    allTasks = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderAll();
+  }));
+  const coQ = query(collection(db,'compra'), orderBy('createdAt','asc'));
+  unsubFns.push(onSnapshot(coQ, snap => {
+    allCompra = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderAll();
+  }));
+}
+
+// ── RENDER ──
+function renderAll() {
+  renderHoy();
+  renderCalendar();
+  renderTareas();
+  renderCompra();
+  updateBadges();
+}
+
+const CAT_COLOR = {
+  medico:'var(--medico)',deporte:'var(--deporte)',nino:'var(--nino)',
+  colegio:'var(--colegio)',compra:'var(--compra)',familia:'var(--familia)',
+  cumple:'var(--cumple)',otros:'var(--otros)'
+};
+const CAT_BG = {
+  medico:'var(--medico-bg)',deporte:'var(--deporte-bg)',nino:'var(--nino-bg)',
+  colegio:'var(--colegio-bg)',compra:'var(--compra-bg)',familia:'var(--familia-bg)',
+  cumple:'var(--cumple-bg)',otros:'var(--otros-bg)'
+};
+const CAT_LABEL = {
+  medico:'Médico',deporte:'Deporte',nino:'Niño',colegio:'Colegio',
+  compra:'Compra',familia:'Familia',cumple:'Cumpleaños',otros:'Otros'
+};
+const CAT_EMOJI = {
+  medico:'🏥',deporte:'⚽',nino:'👦',colegio:'🎒',
+  compra:'🛒',familia:'👨‍👩‍👦',cumple:'🎂',otros:'📌'
+};
+
+function todayStr() {
+  const n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
+}
+
+function renderHoy() {
+  const today = todayStr();
+  const todayEvs = allEvents.filter(e=>e.date===today);
+  const pendTasks = allTasks.filter(t=>!t.done);
+  const pendCompra = allCompra.filter(c=>!c.done);
+
+  document.getElementById('todayCount').innerHTML = `${todayEvs.length} <span>eventos</span>`;
+  document.getElementById('todayTaskCount').textContent = `${pendTasks.length} tareas pendientes`;
+  document.getElementById('pendingTasksCount').innerHTML = `${pendTasks.length} <span>pend.</span>`;
+  document.getElementById('compraCount').innerHTML = `${pendCompra.length} <span>items</span>`;
+
+  const el = document.getElementById('todayEvents');
+  if (!todayEvs.length) {
+    el.innerHTML = '<div class="empty"><div class="emoji">🎉</div><p>¡Sin eventos hoy!</p></div>';
+  } else {
+    el.innerHTML = todayEvs.map(e=>eventCardHTML(e)).join('');
+  }
+
+  // week strip
+  renderWeekStrip();
+
+  // próximos 5 días
+  const upcoming = allEvents.filter(e=>e.date>today).slice(0,8);
+  const wel = document.getElementById('weekEvents');
+  if (!upcoming.length) {
+    wel.innerHTML = '<div class="empty"><div class="emoji">📭</div><p>Sin eventos próximos</p></div>';
+  } else {
+    wel.innerHTML = upcoming.map(e=>eventCardHTML(e,true)).join('');
+  }
+}
+
+function eventCardHTML(e, showDate=false) {
+  const col = CAT_COLOR[e.cat]||'var(--otros)';
+  const bg = CAT_BG[e.cat]||'var(--otros-bg)';
+  const label = CAT_LABEL[e.cat]||'Otros';
+  const timeStr = showDate ? formatDate(e.date) : (e.time||'Todo el día');
+  return `<div class="event-card">
+    <div class="event-stripe" style="background:${col}"></div>
+    <div class="event-time">${timeStr}</div>
+    <div class="event-body">
+      <div class="event-title">${e.desc}</div>
+      ${e.notes?`<div class="event-sub">${e.notes}</div>`:''}
+    </div>
+    <div class="event-badge" style="background:${bg};color:${col}">${label}</div>
+    <div class="event-actions">
+      <button class="btn-icon btn-del" onclick="askDelete('event','${e.id}','${e.desc.replace(/'/g,"\\'")}')">🗑</button>
+    </div>
+  </div>`;
+}
+
+function formatDate(dateStr) {
+  if(!dateStr) return '';
+  const [y,m,d] = dateStr.split('-');
+  const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${parseInt(d)} ${months[parseInt(m)-1]}`;
+}
+
+function renderWeekStrip() {
+  const strip = document.getElementById('weekStrip');
+  const days = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const today = new Date();
+  const todayStr2 = todayStr();
+  let html = '';
+  for(let i=0;i<7;i++) {
+    const d = new Date(today);
+    const dow = today.getDay();
+    const diff = i - (dow===0?6:dow-1);
+    d.setDate(today.getDate()+diff);
+    const ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const evs = allEvents.filter(e=>e.date===ds);
+    const isToday = ds===todayStr2;
+    const dots = evs.slice(0,3).map(e=>`<div class="wdot" style="background:${CAT_COLOR[e.cat]||'var(--otros)'}"></div>`).join('');
+    html += `<div class="wday ${isToday?'active':''}">
+      <div class="wn">${days[i]}</div>
+      <div class="wd">${d.getDate()}</div>
+      <div class="wdots">${dots}</div>
+    </div>`;
+  }
+  strip.innerHTML = html;
+}
+
+function renderCalendar() {
+  const y=calDate.getFullYear(), m=calDate.getMonth();
+  const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('calTitle').textContent = months[m]+' '+y;
+  const grid = document.getElementById('calGrid');
+  const firstDow = new Date(y,m,1).getDay();
+  const offset = firstDow===0?6:firstDow-1;
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const prevDays = new Date(y,m,0).getDate();
+  const today = new Date();
+  let html='';
+  for(let i=0;i<offset;i++) {
+    html+=`<div class="cday other"><div class="cn">${prevDays-offset+1+i}</div><div class="cdots"></div></div>`;
+  }
+  for(let day=1;day<=daysInMonth;day++) {
+    const ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    const isToday=today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===day;
+    const evs=allEvents.filter(e=>e.date===ds);
+    const dots=evs.slice(0,4).map(e=>`<div class="cdot" style="background:${CAT_COLOR[e.cat]||'var(--otros)'}"></div>`).join('');
+    html+=`<div class="cday ${isToday?'today':''}"><div class="cn">${day}</div><div class="cdots">${dots}</div></div>`;
+  }
+  grid.innerHTML=html;
+
+  // upcoming
+  const today2=todayStr();
+  const upcoming=allEvents.filter(e=>e.date>=today2).slice(0,10);
+  const upEl=document.getElementById('upcomingEvents');
+  if(!upcoming.length) {
+    upEl.innerHTML='<div class="empty"><div class="emoji">📭</div><p>Sin eventos próximos</p></div>';
+  } else {
+    upEl.innerHTML=upcoming.map(e=>eventCardHTML(e,true)).join('');
+  }
+}
+
+function renderTareas() {
+  const pending = allTasks.filter(t=>!t.done);
+  const done = allTasks.filter(t=>t.done);
+
+  const tl = document.getElementById('taskList');
+  if(!pending.length) {
+    tl.innerHTML='<div class="empty"><div class="emoji">✅</div><p>¡Todo hecho!</p></div>';
+  } else {
+    tl.innerHTML=pending.map(t=>`
+      <div class="task-card">
+        <div class="task-check ${t.done?'done':''}" onclick="toggleTask('${t.id}',${t.done})"></div>
+        <span class="task-text ${t.done?'done':''}">${t.desc}</span>
+        ${t.who?`<span class="task-who">${t.who}</span>`:''}
+        <button class="btn-icon btn-del" onclick="askDelete('task','${t.id}','${t.desc.replace(/'/g,"\\'")}')">🗑</button>
+      </div>`).join('');
+  }
+
+  const dl = document.getElementById('doneTaskList');
+  if(!done.length) {
+    dl.innerHTML='<div class="empty"><div class="emoji">🕐</div><p>Ninguna completada aún</p></div>';
+  } else {
+    dl.innerHTML=done.map(t=>`
+      <div class="task-card" style="opacity:0.55">
+        <div class="task-check done" onclick="toggleTask('${t.id}',${t.done})"></div>
+        <span class="task-text done">${t.desc}</span>
+        ${t.who?`<span class="task-who">${t.who}</span>`:''}
+        <button class="btn-icon btn-del" onclick="askDelete('task','${t.id}','${t.desc.replace(/'/g,"\\'")}')">🗑</button>
+      </div>`).join('');
+  }
+}
+
+function renderCompra() {
+  const pending = allCompra.filter(c=>!c.done);
+  const done = allCompra.filter(c=>c.done);
+
+  const cl = document.getElementById('compraList');
+  if(!pending.length) {
+    cl.innerHTML='<div style="padding:16px;text-align:center;color:var(--text2);font-size:13px;font-weight:600">¡Lista vacía! Añade artículos 🛒</div>';
+  } else {
+    cl.innerHTML=pending.map(c=>`
+      <div class="compra-item">
+        <div class="compra-check" onclick="toggleCompra('${c.id}',${c.done})"></div>
+        <span class="compra-name">${c.desc}</span>
+        <span class="compra-qty">${c.qty||''}</span>
+        <button class="btn-icon btn-del" style="margin-left:4px" onclick="askDelete('compra','${c.id}','${c.desc.replace(/'/g,"\\'")}')">🗑</button>
+      </div>`).join('');
+  }
+
+  const dl = document.getElementById('compraDoneList');
+  if(!done.length) {
+    dl.innerHTML='<div style="padding:16px;text-align:center;color:var(--text2);font-size:13px;font-weight:600">Nada cogido aún</div>';
+  } else {
+    dl.innerHTML=done.map(c=>`
+      <div class="compra-item" style="opacity:0.5">
+        <div class="compra-check done" onclick="toggleCompra('${c.id}',${c.done})"></div>
+        <span class="compra-name done">${c.desc}</span>
+        <span class="compra-qty">${c.qty||''}</span>
+        <button class="btn-icon btn-del" style="margin-left:4px" onclick="askDelete('compra','${c.id}','${c.desc.replace(/'/g,"\\'")}')">🗑</button>
+      </div>`).join('');
+  }
+}
+
+function updateBadges() {
+  const pt = allTasks.filter(t=>!t.done).length;
+  const pc = allCompra.filter(c=>!c.done).length;
+  const tb = document.getElementById('taskBadge');
+  const cb = document.getElementById('compraBadge');
+  tb.style.display = pt>0?'flex':'none'; tb.textContent=pt;
+  cb.style.display = pc>0?'flex':'none'; cb.textContent=pc;
+}
+
+// ── TOGGLE ──
+window.toggleTask = async (id, done) => {
+  await updateDoc(doc(db,'tasks',id),{done:!done});
+  showToast(done?'↩️ Tarea reabierta':'✅ Tarea completada');
+};
+window.toggleCompra = async (id, done) => {
+  await updateDoc(doc(db,'compra',id),{done:!done});
+};
+
+// ── DELETE ──
+window.askDelete = (col, id, name) => {
+  deleteTarget={col,id,name};
+  document.getElementById('confirmMsg').textContent=`¿Eliminar "${name}"?`;
+  document.getElementById('confirmBg').classList.add('open');
+};
+window.closeConfirm = () => {
+  document.getElementById('confirmBg').classList.remove('open');
+  deleteTarget=null;
+};
+window.confirmDelete = async () => {
+  if(!deleteTarget) return;
+  const colName = deleteTarget.col==='event'?'events':deleteTarget.col==='task'?'tasks':'compra';
+  await deleteDoc(doc(db,colName,deleteTarget.id));
+  showToast('🗑 Eliminado');
+  closeConfirm();
+};
+
+// ── SAVE ──
+window.saveItem = async () => {
+  if(modalType==='evento') {
+    const desc=document.getElementById('evDesc').value.trim();
+    const notes=document.getElementById('evNotes').value.trim();
+    const date=document.getElementById('evDate').value;
+    const time=document.getElementById('evTime').value;
+    if(!desc||!date){showToast('⚠️ Pon descripción y fecha');return;}
+    await addDoc(collection(db,'events'),{desc,notes,date,time,cat:selectedCat,createdAt:serverTimestamp()});
+    showToast('📅 Evento guardado y sincronizado ✓');
+    document.getElementById('evDesc').value='';
+    document.getElementById('evNotes').value='';
+    document.getElementById('evTime').value='';
+  } else if(modalType==='tarea') {
+    const desc=document.getElementById('taDesc').value.trim();
+    const who=document.getElementById('taWho').value.trim();
+    if(!desc){showToast('⚠️ Escribe la tarea');return;}
+    await addDoc(collection(db,'tasks'),{desc,who,done:false,createdAt:serverTimestamp()});
+    showToast('✅ Tarea guardada y sincronizada ✓');
+    document.getElementById('taDesc').value='';
+    document.getElementById('taWho').value='';
+  } else {
+    const desc=document.getElementById('coDesc').value.trim();
+    const qty=document.getElementById('coQty').value.trim();
+    if(!desc){showToast('⚠️ Escribe el artículo');return;}
+    await addDoc(collection(db,'compra'),{desc,qty,done:false,createdAt:serverTimestamp()});
+    showToast('🛒 Añadido a la lista ✓');
+    document.getElementById('coDesc').value='';
+    document.getElementById('coQty').value='';
+  }
+  closeModal();
+};
+
+// ── CALENDAR NAV ──
+window.changeMonth = (dir) => {
+  calDate.setMonth(calDate.getMonth()+dir);
+  renderCalendar();
+};
+
+// ── MODAL ──
+window.openModal = () => {
+  // set today as default date
+  document.getElementById('evDate').value = todayStr();
+  document.getElementById('modalBg').classList.add('open');
+};
+window.closeModal = () => document.getElementById('modalBg').classList.remove('open');
+window.closeModalOutside = (e) => { if(e.target===document.getElementById('modalBg')) closeModal(); };
+
+window.setModalType = (type, el) => {
+  modalType=type;
+  document.querySelectorAll('.type-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('formEvento').style.display=type==='evento'?'block':'none';
+  document.getElementById('formTarea').style.display=type==='tarea'?'block':'none';
+  document.getElementById('formCompra').style.display=type==='compra'?'block':'none';
+};
+
+window.selCat = (el, cat) => {
+  selectedCat=cat;
+  document.querySelectorAll('#catPills .pill').forEach(p=>p.classList.remove('sel'));
+  el.classList.add('sel');
+};
+
+// ── NAV ──
+window.showScreen = (name, btn) => {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+};
+
+// ── TOAST ──
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+window.showToast=showToast;
+
+</script>
+</body>
+</html>
