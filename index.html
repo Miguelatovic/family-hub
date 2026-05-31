@@ -480,8 +480,6 @@ let activeFilter='todos';
 let selectedCalDay=null;
 let recurDays=[];
 let unsubFns=[];
-
-// ✅ CACHE PRO
 let expandedEventsCache = {};
 
 const CAT_COLOR={medico:'#2196F3',deporte:'#FF9800',nino:'#00BCD4',colegio:'#9C27B0',compra:'#E91E63',familia:'#3F51B5',cumple:'#FFC107',otros:'#607D8B'};
@@ -492,7 +490,6 @@ const MONTH_NAMES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Ago
 const MONTH_SHORT=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const DAY_NAMES=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 
-// ✅ LOGIN
 window.signInWithGoogle = async () => {
   try { await signInWithPopup(auth, provider); }
   catch(e) { showToast('❌ Error al iniciar sesión'); }
@@ -503,6 +500,7 @@ onAuthStateChanged(auth, user => {
   if(user) {
     document.getElementById('authScreen').style.display='none';
     ['mainHeader','mainContent','fabBtn','bottomNav'].forEach(id=>document.getElementById(id).style.display=id==='mainContent'?'block':id==='fabBtn'?'flex':'flex');
+    document.getElementById('mainContent').style.display='block';
     setupUI(user); subscribeData();
   } else {
     document.getElementById('authScreen').style.display='flex';
@@ -511,32 +509,40 @@ onAuthStateChanged(auth, user => {
   }
 });
 
-// ✅ DATA
+function setupUI(user) {
+  const name=(user.displayName||'Familia').split(' ')[0];
+  const h=new Date().getHours();
+  document.getElementById('headerGreeting').textContent=(h<13?'¡Buenos días ':h<20?'¡Buenas tardes ':'¡Buenas noches ')+name+'!';
+  const now=new Date();
+  document.getElementById('headerDate').textContent=DAY_NAMES[now.getDay()].charAt(0).toUpperCase()+DAY_NAMES[now.getDay()].slice(1)+', '+now.getDate()+' de '+MONTH_NAMES[now.getMonth()].toLowerCase()+' de '+now.getFullYear();
+  const initials=(user.displayName||'?').split(' ').map(w=>w[0]).slice(0,2).join('');
+  const colors=['#f093fb','#4facfe','#43e97b','#fa709a'];
+  document.getElementById('userAvatars').innerHTML=`<div class="avatar" style="background:${colors[Math.floor(Math.random()*colors.length)]}">${initials}</div>`;
+}
+
 function subscribeData() {
   unsubFns.push(onSnapshot(query(collection(db,'events'),orderBy('date','asc')), snap=>{
-    allEvents=snap.docs.map(d=>({id:d.id,...d.data()}));
-    expandedEventsCache = {}; // limpiar cache
+
+    allEvents = snap.docs.map(d=>({id:d.id,...d.data()}));
+
+    // ✅ JUSTO AQUÍ
+    expandedEventsCache = {};
+
     renderAll();
   }));
 }
 
-// ✅ FORMAT
-function dateStr(d){
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}
+function dateStr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayStr(){ return dateStr(new Date()); }
 
-// ✅ FIX BUG + CACHE
 function expandRecurring(ev, viewStart, viewEnd) {
 
-  if(!ev.recur || ev.recur==='none'){
-    if(ev.date >= viewStart && ev.date <= viewEnd){
+  if(!ev.recur || ev.recur === 'none') {
+    if(ev.date >= viewStart && ev.date <= viewEnd) {
       return [ev];
     }
     return [];
   }
-
-  const cacheKey = ev.id + viewStart + viewEnd;
-  if(expandedEventsCache[cacheKey]) return expandedEventsCache[cacheKey];
 
   const results=[];
   const start=new Date(ev.date+'T12:00:00');
@@ -549,25 +555,57 @@ function expandRecurring(ev, viewStart, viewEnd) {
 
   while(cur<=end && cur<=ve && safety<500){
     safety++;
-    if(cur>=vs) results.push({...ev,date:dateStr(cur),_virtual:true});
 
-    if(ev.recur==='weekly'){ cur.setDate(cur.getDate()+7); }
-    else if(ev.recur==='biweekly'){ cur.setDate(cur.getDate()+14); }
-    else if(ev.recur==='monthly'){ cur.setMonth(cur.getMonth()+1); }
-    else if(ev.recur==='yearly'){ cur.setFullYear(cur.getFullYear()+1); }
+    if(cur>=vs){
+      results.push({...ev,date:dateStr(cur),_virtual:true});
+    }
+
+    if(ev.recur==='weekly'){
+      if(ev.recurDays && ev.recurDays.length>0){
+        let found=false;
+        for(let d=1;d<=7;d++){
+          const next=new Date(cur);
+          next.setDate(cur.getDate()+d);
+
+          if(next>end || next>ve) break;
+
+          if(ev.recurDays.includes(next.getDay())){
+            cur=next;
+            found=true;
+            break;
+          }
+        }
+        if(!found) break;
+      } else {
+        cur.setDate(cur.getDate()+7);
+      }
+    }
+    else if(ev.recur==='biweekly'){
+      cur.setDate(cur.getDate()+14);
+    }
+    else if(ev.recur==='monthly'){
+      cur.setMonth(cur.getMonth()+1);
+    }
+    else if(ev.recur==='yearly'){
+      cur.setFullYear(cur.getFullYear()+1);
+    }
     else break;
   }
 
-  expandedEventsCache[cacheKey]=results;
   return results;
 }
 
-// ✅ RANGE
+
 function getEventsForRange(start,end){
-  const key = start+"_"+end;
-  if(expandedEventsCache[key]) return expandedEventsCache[key];
+
+  const key = start + "_" + end;
+
+  if(expandedEventsCache[key]){
+    return expandedEventsCache[key];
+  }
 
   const all=[];
+
   for(const ev of allEvents){
     all.push(...expandRecurring(ev,start,end));
   }
@@ -577,31 +615,366 @@ function getEventsForRange(start,end){
     return dc!==0 ? dc : (a.time||'').localeCompare(b.time||'');
   });
 
-  expandedEventsCache[key]=all;
+  expandedEventsCache[key] = all;
+
   return all;
 }
 
-// ✅ CLICK DIA
+
+function renderAll(){
+  renderHoy();
+  // Only re-render calendar if we're on that screen AND no day is selected
+  // (to avoid overwriting the day panel)
+  const calScreen=document.getElementById('screen-calendario');
+  if(calScreen && calScreen.classList.contains('active')) {
+    renderCalendar();
+  } else {
+    renderCalendar(); // still render for dots, but panel state preserved
+  }
+  renderTareas(); renderCompra(); updateBadges();
+}
+
+// EVENT CARD: tap to expand/collapse, shows full title + notes + edit/delete in expanded row
+function eventCardHTML(e, showDate=false) {
+  const col=CAT_COLOR[e.cat]||'#607D8B';
+  const bg=CAT_BG[e.cat]||'#eceff1';
+  const label=CAT_LABEL[e.cat]||'Otros';
+  const timeStr=showDate?formatDate(e.date):(e.time||'Todo el día');
+  const recurInfo=e.recur&&e.recur!=='none'?`<div class="recur-info">${RECUR_LABEL[e.recur]||''}</div>`:'<div class="recur-info"></div>';
+  const cardId='ec-'+e.id+(showDate?e.date:'');
+  return `<div class="event-card" id="${cardId}" onclick="toggleEventExpand('${cardId}')">
+    <div class="event-stripe" style="background:${col}"></div>
+    <div class="event-time">${timeStr}</div>
+    <div class="event-body">
+      <div class="event-title">${e.desc||''}</div>
+      ${e.notes?`<div class="event-sub">${e.notes}</div>`:''}
+    </div>
+    <div class="event-badge" style="background:${bg};color:${col}">${label}</div>
+    <div class="event-expand-row">
+      ${recurInfo}
+      <button class="btn-icon btn-edit" onclick="event.stopPropagation();openEdit('event','${e.id}')">✏️ Editar</button>
+      <button class="btn-icon btn-del" onclick="event.stopPropagation();askDelete('event','${e.id}','${(e.desc||'').replace(/'/g,"\\'")}')">🗑</button>
+    </div>
+  </div>`;
+}
+
+window.toggleEventExpand = (cardId) => {
+  const card=document.getElementById(cardId);
+  if(card) card.classList.toggle('expanded');
+};
+
+function formatDate(ds){
+  if(!ds) return '';
+  const [y,m,d]=ds.split('-');
+  return `${parseInt(d)} ${MONTH_SHORT[parseInt(m)-1]}`;
+}
+
+function renderHoy(){
+  const today=todayStr();
+  const windowEnd=dateStr(new Date(Date.now()+30*864e5));
+  const allExp=getEventsForRange(today,windowEnd);
+  const todayEvs=allExp.filter(e=>e.date===today);
+  const pendTasks=allTasks.filter(t=>!t.done);
+  const pendCompra=allCompra.filter(c=>!c.done);
+  document.getElementById('todayCount').innerHTML=`${todayEvs.length} <span>eventos</span>`;
+  document.getElementById('pendingTasksCount').innerHTML=`${pendTasks.length} <span>pend.</span>`;
+  document.getElementById('compraCount').innerHTML=`${pendCompra.length} <span>items</span>`;
+  const el=document.getElementById('todayEvents');
+  el.innerHTML=todayEvs.length?todayEvs.map(e=>eventCardHTML(e)).join(''):'<div class="empty"><div class="emoji">🎉</div><p>¡Sin eventos hoy!</p></div>';
+  renderWeekStrip();
+  const upcoming=allExp.filter(e=>e.date>today).slice(0,6);
+  document.getElementById('weekEvents').innerHTML=upcoming.length?upcoming.map(e=>eventCardHTML(e,true)).join(''):'<div class="empty"><div class="emoji">📭</div><p>Sin eventos próximos</p></div>';
+}
+
+function renderWeekStrip(){
+  const dayNames=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const today=new Date(); const ts=todayStr();
+  const dow=today.getDay();
+  let html='';
+  for(let i=0;i<7;i++){
+    const d=new Date(today); const diff=i-(dow===0?6:dow-1); d.setDate(today.getDate()+diff);
+    const ds=dateStr(d);
+    const evs=getEventsForRange(ds,ds);
+    const dots=evs.slice(0,3).map(e=>`<div class="wdot" style="background:${CAT_COLOR[e.cat]||'#607D8B'}"></div>`).join('');
+    html+=`<div class="wday ${ds===ts?'active':''}"><div class="wn">${dayNames[i]}</div><div class="wd">${d.getDate()}</div><div class="wdots">${dots}</div></div>`;
+  }
+  document.getElementById('weekStrip').innerHTML=html;
+}
+
+function renderCalendar(){
+  const y=calDate.getFullYear(), m=calDate.getMonth();
+  document.getElementById('calTitle').textContent=MONTH_NAMES[m]+' '+y;
+  const firstDow=new Date(y,m,1).getDay();
+  const offset=firstDow===0?6:firstDow-1;
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const prevDays=new Date(y,m,0).getDate();
+  const today=new Date();
+  const monthStart=y+'-'+String(m+1).padStart(2,'0')+'-01';
+  const monthEnd=y+'-'+String(m+1).padStart(2,'0')+'-'+String(daysInMonth).padStart(2,'0');
+  const monthEvs=getEventsForRange(monthStart,monthEnd);
+
+  // Cuadrícula
+  let html='';
+  for(let i=0;i<offset;i++) html+=`<div class="cday other"><div class="cn">${prevDays-offset+1+i}</div><div class="cdots"></div></div>`;
+  for(let day=1;day<=daysInMonth;day++){
+    const ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    const isToday=today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===day;
+    const isSel=selectedCalDay===ds;
+    let evs=monthEvs.filter(e=>e.date===ds);
+    if(activeFilter!=='todos') evs=evs.filter(e=>e.cat===activeFilter);
+    const dots=evs.slice(0,4).map(e=>`<div class="cdot" style="background:${CAT_COLOR[e.cat]||'#607D8B'}"></div>`).join('');
+    html+=`<div class="cday ${isToday?'today-cal':''} ${isSel?'selected-day':''}" onclick="selectCalDay('${ds}')"><div class="cn">${day}</div><div class="cdots">${dots}</div></div>`;
+  }
+  document.getElementById('calGrid').innerHTML=html;
+
+  const panel=document.getElementById('dayPanel');
+  const upcomingSection=document.getElementById('upcomingSection');
+
+  if(selectedCalDay){
+    // *** SOLO eventos de ese día ***
+    let dayEvs=getEventsForRange(selectedCalDay,selectedCalDay);
+    if(activeFilter!=='todos') dayEvs=dayEvs.filter(e=>e.cat===activeFilter);
+    const [sy,sm,sd]=selectedCalDay.split('-');
+    const dObj=new Date(parseInt(sy),parseInt(sm)-1,parseInt(sd));
+    document.getElementById('dayPanelTitle').textContent=
+      DAY_NAMES[dObj.getDay()].charAt(0).toUpperCase()+DAY_NAMES[dObj.getDay()].slice(1)+
+      ', '+parseInt(sd)+' de '+MONTH_NAMES[parseInt(sm)-1].toLowerCase();
+    document.getElementById('dayPanelEvents').innerHTML=dayEvs.length
+      ?dayEvs.map(e=>eventCardHTML(e)).join('')
+      :'<div class="empty"><div class="emoji">&#10024;</div><p>Sin eventos este día</p></div>';
+    panel.classList.add('open');
+    upcomingSection.style.display='none';
+    document.getElementById('upcomingEvents').innerHTML='';
+  } else {
+    // Sin selección: panel oculto + todos los próximos
+    panel.classList.remove('open');
+    upcomingSection.style.display='block';
+    const ts=todayStr();
+    const futureEnd=dateStr(new Date(Date.now()+120*864e5));
+    let upcoming=getEventsForRange(ts,futureEnd);
+    if(activeFilter!=='todos') upcoming=upcoming.filter(e=>e.cat===activeFilter);
+    document.getElementById('upcomingEvents').innerHTML=upcoming.slice(0,20).length
+      ?upcoming.slice(0,20).map(e=>eventCardHTML(e,true)).join('')
+      :'<div class="empty"><div class="emoji">&#128235;</div><p>Sin eventos próximos</p></div>';
+  }
+}
+
+
 window.selectCalDay=(ds)=>{
   selectedCalDay=selectedCalDay===ds?null:ds;
+
   renderCalendar();
 
   if(selectedCalDay){
     setTimeout(()=>{
       document.getElementById('dayPanel').scrollIntoView({
-        behavior:'smooth'
+        behavior:'smooth',
+        block:'start'
       });
     },100);
   }
 };
 
-function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg;
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2800);
+window.closeDayPanel=()=>{ selectedCalDay=null; renderCalendar(); };
+
+window.setFilter=(cat,el)=>{
+  activeFilter=cat;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderCalendar();
+};
+
+function renderTareas(){
+  const pending=allTasks.filter(t=>!t.done);
+  const done=allTasks.filter(t=>t.done);
+  document.getElementById('taskList').innerHTML=pending.length?pending.map(t=>`
+    <div class="task-card">
+      <div class="task-check ${t.done?'done':''}" onclick="toggleTask('${t.id}',${t.done})"></div>
+      <span class="task-text">${t.desc}</span>
+      ${t.who?`<span class="task-who">${t.who}</span>`:''}
+      <div class="event-actions">
+        <button class="btn-icon btn-edit" onclick="openEdit('task','${t.id}')">✏️</button>
+        <button class="btn-icon btn-del" onclick="askDelete('task','${t.id}','${(t.desc||'').replace(/'/g,"\\'")}')">🗑</button>
+      </div>
+    </div>`).join(''):'<div class="empty"><div class="emoji">✅</div><p>¡Todo hecho!</p></div>';
+  document.getElementById('doneTaskList').innerHTML=done.length?done.map(t=>`
+    <div class="task-card" style="opacity:.55">
+      <div class="task-check done" onclick="toggleTask('${t.id}',${t.done})"></div>
+      <span class="task-text done">${t.desc}</span>
+      ${t.who?`<span class="task-who">${t.who}</span>`:''}
+      <button class="btn-icon btn-del" onclick="askDelete('task','${t.id}','${(t.desc||'').replace(/'/g,"\\'")}')">🗑</button>
+    </div>`).join(''):'<div class="empty"><div class="emoji">🕐</div><p>Ninguna completada aún</p></div>';
 }
 
+function renderCompra(){
+  const pending=allCompra.filter(c=>!c.done);
+  const done=allCompra.filter(c=>c.done);
+  document.getElementById('compraList').innerHTML=pending.length?pending.map(c=>`
+    <div class="compra-item">
+      <div class="compra-check" onclick="toggleCompra('${c.id}',${c.done})"></div>
+      <span class="compra-name">${c.desc}</span>
+      <span class="compra-qty">${c.qty||''}</span>
+      <div class="event-actions" style="margin-left:4px">
+        <button class="btn-icon btn-edit" onclick="openEdit('compra','${c.id}')">✏️</button>
+        <button class="btn-icon btn-del" onclick="askDelete('compra','${c.id}','${(c.desc||'').replace(/'/g,"\\'")}')">🗑</button>
+      </div>
+    </div>`).join(''):'<div style="padding:16px;text-align:center;color:var(--text2);font-size:13px;font-weight:600">¡Lista vacía! 🛒</div>';
+  document.getElementById('compraDoneList').innerHTML=done.length?done.map(c=>`
+    <div class="compra-item" style="opacity:.5">
+      <div class="compra-check done" onclick="toggleCompra('${c.id}',${c.done})"></div>
+      <span class="compra-name done">${c.desc}</span>
+      <span class="compra-qty">${c.qty||''}</span>
+      <button class="btn-icon btn-del" style="margin-left:4px" onclick="askDelete('compra','${c.id}','${(c.desc||'').replace(/'/g,"\\'")}')">🗑</button>
+    </div>`).join(''):'<div style="padding:16px;text-align:center;color:var(--text2);font-size:13px;font-weight:600">Nada cogido aún</div>';
+}
+
+function updateBadges(){
+  const pt=allTasks.filter(t=>!t.done).length; const pc=allCompra.filter(c=>!c.done).length;
+  const tb=document.getElementById('taskBadge'); tb.style.display=pt>0?'flex':'none'; tb.textContent=pt;
+  const cb=document.getElementById('compraBadge'); cb.style.display=pc>0?'flex':'none'; cb.textContent=pc;
+}
+
+window.goToTodayEvents=()=>{ showScreen('hoy',document.getElementById('nav-hoy')); setTimeout(()=>document.getElementById('todayEvents').scrollIntoView({behavior:'smooth'}),100); };
+window.goToTareas=()=>showScreen('tareas',document.getElementById('nav-tareas'));
+window.goToCompra=()=>showScreen('compra',document.getElementById('nav-compra'));
+
+window.toggleTask=async(id,done)=>{ await updateDoc(doc(db,'tasks',id),{done:!done}); showToast(done?'↩️ Tarea reabierta':'✅ Tarea completada'); };
+window.toggleCompra=async(id,done)=>{ await updateDoc(doc(db,'compra',id),{done:!done}); };
+
+window.openEdit=(col,id)=>{
+  editingId=id;
+  document.getElementById('modalTitleText').textContent='✏️ Editar';
+  document.getElementById('typeTabs').style.display='none';
+  if(col==='event'){
+    const ev=allEvents.find(e=>e.id===id); if(!ev) return;
+    setModalType('evento',null);
+    document.getElementById('evDesc').value=ev.desc||'';
+    document.getElementById('evNotes').value=ev.notes||'';
+    document.getElementById('evDate').value=ev.date||'';
+    document.getElementById('evTime').value=ev.time||'';
+    selectedCat=ev.cat||'otros';
+    document.querySelectorAll('#catPills .pill').forEach(p=>p.classList.remove('sel'));
+    const catEl=document.querySelector(`#catPills .pill[onclick*="'${ev.cat}'"]`);
+    if(catEl) catEl.classList.add('sel');
+    document.getElementById('evRecur').value=ev.recur||'none';
+    document.getElementById('evRecurEnd').value=ev.recurEnd||'';
+    recurDays=ev.recurDays||[];
+    document.querySelectorAll('.recur-day-btn').forEach(b=>b.classList.toggle('sel',recurDays.includes(parseInt(b.dataset.day))));
+    toggleRecurOptions();
+  } else if(col==='task'){
+    const t=allTasks.find(t=>t.id===id); if(!t) return;
+    setModalType('tarea',null);
+    document.getElementById('taDesc').value=t.desc||'';
+    document.getElementById('taWho').value=t.who||'';
+  } else {
+    const c=allCompra.find(c=>c.id===id); if(!c) return;
+    setModalType('compra',null);
+    document.getElementById('coDesc').value=c.desc||'';
+    document.getElementById('coQty').value=c.qty||'';
+  }
+  document.getElementById('modalBg').classList.add('open');
+};
+
+window.askDelete=(col,id,name)=>{
+  deleteTarget={col,id,name};
+  document.getElementById('confirmMsg').textContent=`¿Eliminar "${name}"?`;
+  document.getElementById('confirmBg').classList.add('open');
+};
+window.closeConfirm=()=>{ document.getElementById('confirmBg').classList.remove('open'); deleteTarget=null; };
+window.confirmDelete=async()=>{
+  if(!deleteTarget) return;
+  const colName=deleteTarget.col==='event'?'events':deleteTarget.col==='task'?'tasks':'compra';
+  await deleteDoc(doc(db,colName,deleteTarget.id));
+  showToast('🗑 Eliminado'); closeConfirm();
+};
+
+window.saveItem=async()=>{
+  if(modalType==='evento'){
+    const desc=document.getElementById('evDesc').value.trim();
+    const notes=document.getElementById('evNotes').value.trim();
+    const date=document.getElementById('evDate').value;
+    const time=document.getElementById('evTime').value;
+    const recur=document.getElementById('evRecur').value;
+    const recurEnd=document.getElementById('evRecurEnd').value;
+    if(!desc||!date){showToast('⚠️ Pon descripción y fecha');return;}
+    const data={desc,notes,date,time,cat:selectedCat,recur,recurEnd,recurDays};
+    if(editingId){ await updateDoc(doc(db,'events',editingId),data); showToast('✅ Evento actualizado'); }
+    else { await addDoc(collection(db,'events'),{...data,createdAt:serverTimestamp()}); showToast('📅 Evento guardado ✓'); }
+    ['evDesc','evNotes','evTime'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('evRecur').value='none'; document.getElementById('evRecurEnd').value='';
+    recurDays=[]; document.querySelectorAll('.recur-day-btn').forEach(b=>b.classList.remove('sel'));
+  } else if(modalType==='tarea'){
+    const desc=document.getElementById('taDesc').value.trim();
+    const who=document.getElementById('taWho').value.trim();
+    if(!desc){showToast('⚠️ Escribe la tarea');return;}
+    if(editingId){ await updateDoc(doc(db,'tasks',editingId),{desc,who}); showToast('✅ Tarea actualizada'); }
+    else { await addDoc(collection(db,'tasks'),{desc,who,done:false,createdAt:serverTimestamp()}); showToast('✅ Tarea guardada ✓'); }
+    ['taDesc','taWho'].forEach(id=>document.getElementById(id).value='');
+  } else {
+    const desc=document.getElementById('coDesc').value.trim();
+    const qty=document.getElementById('coQty').value.trim();
+    if(!desc){showToast('⚠️ Escribe el artículo');return;}
+    if(editingId){ await updateDoc(doc(db,'compra',editingId),{desc,qty}); showToast('✅ Artículo actualizado'); }
+    else { await addDoc(collection(db,'compra'),{desc,qty,done:false,createdAt:serverTimestamp()}); showToast('🛒 Añadido ✓'); }
+    ['coDesc','coQty'].forEach(id=>document.getElementById(id).value='');
+  }
+  closeModal();
+};
+
+window.openModal=()=>{
+  editingId=null;
+  document.getElementById('modalTitleText').textContent='➕ Añadir';
+  document.getElementById('typeTabs').style.display='flex';
+  document.getElementById('evDate').value=todayStr();
+  document.getElementById('evRecur').value='none';
+  recurDays=[];
+  document.querySelectorAll('.recur-day-btn').forEach(b=>b.classList.remove('sel'));
+  toggleRecurOptions();
+  document.getElementById('modalBg').classList.add('open');
+};
+window.closeModal=()=>{
+  document.getElementById('modalBg').classList.remove('open');
+  editingId=null;
+  document.getElementById('typeTabs').style.display='flex';
+};
+window.closeModalOutside=(e)=>{ if(e.target===document.getElementById('modalBg')) closeModal(); };
+
+window.setModalType=(type,el)=>{
+  modalType=type;
+  if(el){ document.querySelectorAll('.type-tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); }
+  document.getElementById('formEvento').style.display=type==='evento'?'block':'none';
+  document.getElementById('formTarea').style.display=type==='tarea'?'block':'none';
+  document.getElementById('formCompra').style.display=type==='compra'?'block':'none';
+};
+
+window.selCat=(el,cat)=>{
+  selectedCat=cat;
+  document.querySelectorAll('#catPills .pill').forEach(p=>p.classList.remove('sel'));
+  el.classList.add('sel');
+};
+
+window.toggleRecurOptions=()=>{
+  const val=document.getElementById('evRecur').value;
+  document.getElementById('recurDaysWrap').style.display=val==='weekly'?'block':'none';
+  document.getElementById('recurEndWrap').style.display=val!=='none'?'block':'none';
+};
+
+window.toggleRecurDay=(btn)=>{
+  const day=parseInt(btn.dataset.day);
+  if(recurDays.includes(day)){ recurDays=recurDays.filter(d=>d!==day); btn.classList.remove('sel'); }
+  else { recurDays.push(day); btn.classList.add('sel'); }
+};
+
+window.changeMonth=(dir)=>{ calDate.setMonth(calDate.getMonth()+dir); renderCalendar(); };
+
+window.showScreen=(name,btn)=>{
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+};
+
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
 window.showToast=showToast;
 </script>
 </body>
