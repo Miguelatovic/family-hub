@@ -570,7 +570,18 @@ function getEventsForRange(start,end){
   return all;
 }
 
-function renderAll(){ renderHoy(); renderCalendar(); renderTareas(); renderCompra(); updateBadges(); }
+function renderAll(){
+  renderHoy();
+  // Only re-render calendar if we're on that screen AND no day is selected
+  // (to avoid overwriting the day panel)
+  const calScreen=document.getElementById('screen-calendario');
+  if(calScreen && calScreen.classList.contains('active')) {
+    renderCalendar();
+  } else {
+    renderCalendar(); // still render for dots, but panel state preserved
+  }
+  renderTareas(); renderCompra(); updateBadges();
+}
 
 // EVENT CARD: tap to expand/collapse, shows full title + notes + edit/delete in expanded row
 function eventCardHTML(e, showDate=false) {
@@ -651,7 +662,7 @@ function renderCalendar(){
   const monthEnd=y+'-'+String(m+1).padStart(2,'0')+'-'+String(daysInMonth).padStart(2,'0');
   const monthEvs=getEventsForRange(monthStart,monthEnd);
 
-  // Cuadrícula del mes
+  // Cuadrícula
   let html='';
   for(let i=0;i<offset;i++) html+=`<div class="cday other"><div class="cn">${prevDays-offset+1+i}</div><div class="cdots"></div></div>`;
   for(let day=1;day<=daysInMonth;day++){
@@ -669,7 +680,7 @@ function renderCalendar(){
   const upcomingSection=document.getElementById('upcomingSection');
 
   if(selectedCalDay){
-    // Mostrar SOLO los eventos de ese día
+    // *** SOLO eventos de ese día ***
     let dayEvs=getEventsForRange(selectedCalDay,selectedCalDay);
     if(activeFilter!=='todos') dayEvs=dayEvs.filter(e=>e.cat===activeFilter);
     const [sy,sm,sd]=selectedCalDay.split('-');
@@ -681,12 +692,10 @@ function renderCalendar(){
       ?dayEvs.map(e=>eventCardHTML(e)).join('')
       :'<div class="empty"><div class="emoji">&#10024;</div><p>Sin eventos este día</p></div>';
     panel.classList.add('open');
-    // Ocultar completamente la sección de próximos
     upcomingSection.style.display='none';
-    setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
-
+    document.getElementById('upcomingEvents').innerHTML='';
   } else {
-    // Sin selección: ocultar panel, mostrar próximos
+    // Sin selección: panel oculto + todos los próximos
     panel.classList.remove('open');
     upcomingSection.style.display='block';
     const ts=todayStr();
