@@ -472,116 +472,137 @@ const provider = new GoogleAuthProvider();
 
 let allEvents=[], allTasks=[], allCompra=[];
 let calDate=new Date();
-let selectedCat='medico';
-let modalType='evento';
-let editingId=null;
-let deleteTarget=null;
-let activeFilter='todos';
 let selectedCalDay=null;
-let recurDays=[];
-let unsubFns=[];
+let activeFilter='todos';
 
-const CAT_COLOR={medico:'#2196F3',deporte:'#FF9800',nino:'#00BCD4',colegio:'#9C27B0',compra:'#E91E63',familia:'#3F51B5',cumple:'#FFC107',otros:'#607D8B'};
-const CAT_BG={medico:'#e3f2fd',deporte:'#fff3e0',nino:'#e0f7fa',colegio:'#f3e5f5',compra:'#fce4ec',familia:'#e8eaf6',cumple:'#fff8e1',otros:'#eceff1'};
-const CAT_LABEL={medico:'Médico',deporte:'Deporte',nino:'Niño',colegio:'Colegio',compra:'Compra',familia:'Familia',cumple:'Cumpleaños',otros:'Otros'};
-const RECUR_LABEL={none:'',weekly:'🔁 Semanal',biweekly:'🔁 Quincenal',monthly:'🔁 Mensual',yearly:'🔁 Anual'};
-const MONTH_NAMES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const MONTH_SHORT=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-const DAY_NAMES=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+// ✅ CACHE para rendimiento
+let eventsCache = {};
 
-window.signInWithGoogle = async () => {
-  try { await signInWithPopup(auth, provider); }
-  catch(e) { showToast('❌ Error al iniciar sesión'); }
-};
-
-onAuthStateChanged(auth, user => {
-  document.getElementById('loading').style.display='none';
-  if(user) {
-    document.getElementById('authScreen').style.display='none';
-    ['mainHeader','mainContent','fabBtn','bottomNav'].forEach(id=>document.getElementById(id).style.display=id==='mainContent'?'block':id==='fabBtn'?'flex':'flex');
-    document.getElementById('mainContent').style.display='block';
-    setupUI(user); subscribeData();
-  } else {
-    document.getElementById('authScreen').style.display='flex';
-    ['mainHeader','mainContent','fabBtn','bottomNav'].forEach(id=>document.getElementById(id).style.display='none');
-    unsubFns.forEach(u=>u()); unsubFns=[];
-  }
-});
-
-function setupUI(user) {
-  const name=(user.displayName||'Familia').split(' ')[0];
-  const h=new Date().getHours();
-  document.getElementById('headerGreeting').textContent=(h<13?'¡Buenos días ':h<20?'¡Buenas tardes ':'¡Buenas noches ')+name+'!';
-  const now=new Date();
-  document.getElementById('headerDate').textContent=DAY_NAMES[now.getDay()].charAt(0).toUpperCase()+DAY_NAMES[now.getDay()].slice(1)+', '+now.getDate()+' de '+MONTH_NAMES[now.getMonth()].toLowerCase()+' de '+now.getFullYear();
-  const initials=(user.displayName||'?').split(' ').map(w=>w[0]).slice(0,2).join('');
-  const colors=['#f093fb','#4facfe','#43e97b','#fa709a'];
-  document.getElementById('userAvatars').innerHTML=`<div class="avatar" style="background:${colors[Math.floor(Math.random()*colors.length)]}">${initials}</div>`;
+function dateStr(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
-function subscribeData() {
-  unsubFns.push(onSnapshot(query(collection(db,'events'),orderBy('date','asc')), snap=>{
-    allEvents=snap.docs.map(d=>({id:d.id,...d.data()})); renderAll();
-  }));
-  unsubFns.push(onSnapshot(query(collection(db,'tasks'),orderBy('createdAt','asc')), snap=>{
-    allTasks=snap.docs.map(d=>({id:d.id,...d.data()})); renderAll();
-  }));
-  unsubFns.push(onSnapshot(query(collection(db,'compra'),orderBy('createdAt','asc')), snap=>{
-    allCompra=snap.docs.map(d=>({id:d.id,...d.data()})); renderAll();
-  }));
-}
-
-function dateStr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-function todayStr(){ return dateStr(new Date()); }
-
+// ✅ FIX + OPTIMIZACIÓN
 function expandRecurring(ev, viewStart, viewEnd) {
-  if(!ev.recur||ev.recur==='none') return [ev];
+
+  // ✅ FILTRO CORRECTO PARA EVENTOS NORMALES
+  if(!ev.recur || ev.recur==='none') {
+    if(ev.date >= viewStart && ev.date <= viewEnd) {
+      return [ev];
+    }
+    return [];
+  }
+
+  const cacheKey = ev.id + viewStart + viewEnd;
+  if(eventsCache[cacheKey]) return eventsCache[cacheKey];
+
   const results=[];
   const start=new Date(ev.date+'T12:00:00');
-  const end=ev.recurEnd?new Date(ev.recurEnd+'T12:00:00'):new Date('2099-12-31');
+  const end=ev.recurEnd ? new Date(ev.recurEnd+'T12:00:00') : new Date('2099-12-31');
   const vs=new Date(viewStart+'T00:00:00');
   const ve=new Date(viewEnd+'T23:59:59');
-  let cur=new Date(start); let safety=0;
-  while(cur<=end&&cur<=ve&&safety<500){
+
+  let cur=new Date(start);
+  let safety=0;
+
+  while(cur<=end && cur<=ve && safety<500){
     safety++;
-    if(cur>=vs) results.push({...ev,date:dateStr(cur),_virtual:true});
+
+    if(cur>=vs){
+      results.push({...ev, date: dateStr(cur), _virtual:true});
+    }
+
     if(ev.recur==='weekly'){
-      if(ev.recurDays&&ev.recurDays.length>0){
-        let found=false;
-        for(let d=1;d<=7;d++){
-          const next=new Date(cur); next.setDate(cur.getDate()+d);
-          if(next>end||next>ve) break;
-          if(ev.recurDays.includes(next.getDay())){cur=next;found=true;break;}
-        }
-        if(!found) break;
-      } else { cur.setDate(cur.getDate()+7); }
-    } else if(ev.recur==='biweekly'){ cur.setDate(cur.getDate()+14); }
-    else if(ev.recur==='monthly'){ cur.setMonth(cur.getMonth()+1); }
-    else if(ev.recur==='yearly'){ cur.setFullYear(cur.getFullYear()+1); }
-    else break;
+      cur.setDate(cur.getDate()+7);
+    }
+    else if(ev.recur==='biweekly'){
+      cur.setDate(cur.getDate()+14);
+    }
+    else if(ev.recur==='monthly'){
+      cur.setMonth(cur.getMonth()+1);
+    }
+    else if(ev.recur==='yearly'){
+      cur.setFullYear(cur.getFullYear()+1);
+    }
   }
+
+  eventsCache[cacheKey] = results;
   return results;
 }
 
 function getEventsForRange(start,end){
   const all=[];
-  for(const ev of allEvents){ all.push(...expandRecurring(ev,start,end)); }
-  all.sort((a,b)=>{ const dc=a.date.localeCompare(b.date); return dc!==0?dc:(a.time||'').localeCompare(b.time||''); });
+  for(const ev of allEvents){
+    all.push(...expandRecurring(ev,start,end));
+  }
+
+  all.sort((a,b)=>{
+    const dc=a.date.localeCompare(b.date);
+    return dc!==0 ? dc : (a.time||'').localeCompare(b.time||'');
+  });
+
   return all;
 }
 
-function renderAll(){
-  renderHoy();
-  // Only re-render calendar if we're on that screen AND no day is selected
-  // (to avoid overwriting the day panel)
-  const calScreen=document.getElementById('screen-calendario');
-  if(calScreen && calScreen.classList.contains('active')) {
-    renderCalendar();
+function renderCalendar(){
+
+  const y=calDate.getFullYear();
+  const m=calDate.getMonth();
+
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const monthStart=`${y}-${String(m+1).padStart(2,'0')}-01`;
+  const monthEnd=`${y}-${String(m+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`;
+
+  const monthEvs=getEventsForRange(monthStart,monthEnd);
+
+  // ✅ PANEL DE DÍA (AQUÍ ESTABA EL PROBLEMA)
+  const panel=document.getElementById('dayPanel');
+  const upcoming=document.getElementById('upcomingSection');
+
+  if(selectedCalDay){
+
+    let dayEvs = monthEvs.filter(e => e.date === selectedCalDay);
+
+    if(activeFilter!=='todos'){
+      dayEvs = dayEvs.filter(e => e.cat === activeFilter);
+    }
+
+    document.getElementById('dayPanelEvents').innerHTML =
+      dayEvs.length
+        ? dayEvs.map(e => `<div class="event-card">${e.desc}</div>`).join('')
+        : '<p>Sin eventos</p>';
+
+    // ✅ ANIMACIÓN SUAVE
+    panel.style.display='block';
+    panel.style.opacity='0';
+    panel.style.transform='translateY(10px)';
+
+    setTimeout(() => {
+      panel.style.transition='all 0.25s ease';
+      panel.style.opacity='1';
+      panel.style.transform='translateY(0)';
+    },10);
+
+    upcoming.style.display='none';
+
   } else {
-    renderCalendar(); // still render for dots, but panel state preserved
+    panel.style.display='none';
+    upcoming.style.display='block';
   }
-  renderTareas(); renderCompra(); updateBadges();
 }
+
+window.selectCalDay = (ds)=>{
+  selectedCalDay = (selectedCalDay===ds ? null : ds);
+  renderCalendar();
+};
+
+window.setFilter = (cat)=>{
+  activeFilter = cat;
+  renderCalendar();
+};
+
+</script>
+
 
 // EVENT CARD: tap to expand/collapse, shows full title + notes + edit/delete in expanded row
 function eventCardHTML(e, showDate=false) {
