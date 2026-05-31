@@ -480,7 +480,6 @@ let activeFilter='todos';
 let selectedCalDay=null;
 let recurDays=[];
 let unsubFns=[];
-let expandedEventsCache = {};
 
 const CAT_COLOR={medico:'#2196F3',deporte:'#FF9800',nino:'#00BCD4',colegio:'#9C27B0',compra:'#E91E63',familia:'#3F51B5',cumple:'#FFC107',otros:'#607D8B'};
 const CAT_BG={medico:'#e3f2fd',deporte:'#fff3e0',nino:'#e0f7fa',colegio:'#f3e5f5',compra:'#fce4ec',familia:'#e8eaf6',cumple:'#fff8e1',otros:'#eceff1'};
@@ -522,13 +521,13 @@ function setupUI(user) {
 
 function subscribeData() {
   unsubFns.push(onSnapshot(query(collection(db,'events'),orderBy('date','asc')), snap=>{
-
-    allEvents = snap.docs.map(d=>({id:d.id,...d.data()}));
-
-    // ✅ JUSTO AQUÍ
-    expandedEventsCache = {};
-
-    renderAll();
+    allEvents=snap.docs.map(d=>({id:d.id,...d.data()})); renderAll();
+  }));
+  unsubFns.push(onSnapshot(query(collection(db,'tasks'),orderBy('createdAt','asc')), snap=>{
+    allTasks=snap.docs.map(d=>({id:d.id,...d.data()})); renderAll();
+  }));
+  unsubFns.push(onSnapshot(query(collection(db,'compra'),orderBy('createdAt','asc')), snap=>{
+    allCompra=snap.docs.map(d=>({id:d.id,...d.data()})); renderAll();
   }));
 }
 
@@ -537,6 +536,7 @@ function todayStr(){ return dateStr(new Date()); }
 
 function expandRecurring(ev, viewStart, viewEnd) {
 
+  // ✅ FIX CLAVE: FILTRAR EVENTOS NO RECURRENTES
   if(!ev.recur || ev.recur === 'none') {
     if(ev.date >= viewStart && ev.date <= viewEnd) {
       return [ev];
@@ -595,31 +595,12 @@ function expandRecurring(ev, viewStart, viewEnd) {
   return results;
 }
 
-
 function getEventsForRange(start,end){
-
-  const key = start + "_" + end;
-
-  if(expandedEventsCache[key]){
-    return expandedEventsCache[key];
-  }
-
   const all=[];
-
-  for(const ev of allEvents){
-    all.push(...expandRecurring(ev,start,end));
-  }
-
-  all.sort((a,b)=>{
-    const dc=a.date.localeCompare(b.date);
-    return dc!==0 ? dc : (a.time||'').localeCompare(b.time||'');
-  });
-
-  expandedEventsCache[key] = all;
-
+  for(const ev of allEvents){ all.push(...expandRecurring(ev,start,end)); }
+  all.sort((a,b)=>{ const dc=a.date.localeCompare(b.date); return dc!==0?dc:(a.time||'').localeCompare(b.time||''); });
   return all;
 }
-
 
 function renderAll(){
   renderHoy();
@@ -762,17 +743,7 @@ function renderCalendar(){
 
 window.selectCalDay=(ds)=>{
   selectedCalDay=selectedCalDay===ds?null:ds;
-
   renderCalendar();
-
-  if(selectedCalDay){
-    setTimeout(()=>{
-      document.getElementById('dayPanel').scrollIntoView({
-        behavior:'smooth',
-        block:'start'
-      });
-    },100);
-  }
 };
 
 window.closeDayPanel=()=>{ selectedCalDay=null; renderCalendar(); };
