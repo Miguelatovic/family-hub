@@ -650,6 +650,8 @@ function renderCalendar(){
   const monthStart=y+'-'+String(m+1).padStart(2,'0')+'-01';
   const monthEnd=y+'-'+String(m+1).padStart(2,'0')+'-'+String(daysInMonth).padStart(2,'0');
   const monthEvs=getEventsForRange(monthStart,monthEnd);
+
+  // Construir cuadrícula del mes
   let html='';
   for(let i=0;i<offset;i++) html+=`<div class="cday other"><div class="cn">${prevDays-offset+1+i}</div><div class="cdots"></div></div>`;
   for(let day=1;day<=daysInMonth;day++){
@@ -663,9 +665,12 @@ function renderCalendar(){
   }
   document.getElementById('calGrid').innerHTML=html;
 
-  // PANEL DIA: eventos del dia seleccionado
+  // PANEL: eventos del día seleccionado (solo ese día)
   const panel=document.getElementById('dayPanel');
+  const upcomingLabelEl=document.getElementById('upcomingLabel');
+
   if(selectedCalDay){
+    // Eventos SOLO de ese día
     let dayEvs=getEventsForRange(selectedCalDay,selectedCalDay);
     if(activeFilter!=='todos') dayEvs=dayEvs.filter(e=>e.cat===activeFilter);
     const [sy,sm,sd]=selectedCalDay.split('-');
@@ -675,25 +680,32 @@ function renderCalendar(){
       ', '+parseInt(sd)+' de '+MONTH_NAMES[parseInt(sm)-1].toLowerCase();
     document.getElementById('dayPanelEvents').innerHTML=dayEvs.length
       ?dayEvs.map(e=>eventCardHTML(e)).join('')
-      :'<div class="empty"><div class="emoji">&#10024;</div><p>Sin eventos este dia</p></div>';
+      :'<div class="empty"><div class="emoji">&#10024;</div><p>Sin eventos este día</p></div>';
     panel.classList.add('open');
     setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
-  } else {
-    panel.classList.remove('open');
-  }
 
-  // RESTO DE EVENTOS: siempre visible debajo, sin repetir el dia seleccionado
-  const upcomingLabelEl=document.getElementById('upcomingLabel');
-  const ts=todayStr();
-  const futureEnd=dateStr(new Date(Date.now()+120*864e5));
-  let upcoming=getEventsForRange(ts,futureEnd);
-  if(activeFilter!=='todos') upcoming=upcoming.filter(e=>e.cat===activeFilter);
-  if(selectedCalDay) upcoming=upcoming.filter(e=>e.date!==selectedCalDay);
-  if(upcomingLabelEl) upcomingLabelEl.textContent=selectedCalDay?'Resto de eventos':'Proximos eventos';
-  document.getElementById('upcomingEvents').innerHTML=upcoming.slice(0,15).length
-    ?upcoming.slice(0,15).map(e=>eventCardHTML(e,true)).join('')
-    :'<div class="empty"><div class="emoji">&#128235;</div><p>Sin mas eventos</p></div>';
+    // Lista inferior: todos los eventos del mes EXCEPTO el día seleccionado
+    let restEvs=monthEvs.filter(e=>e.date!==selectedCalDay);
+    if(activeFilter!=='todos') restEvs=restEvs.filter(e=>e.cat===activeFilter);
+    if(upcomingLabelEl) upcomingLabelEl.textContent='Resto del mes';
+    document.getElementById('upcomingEvents').innerHTML=restEvs.length
+      ?restEvs.map(e=>eventCardHTML(e,true)).join('')
+      :'<div class="empty"><div class="emoji">&#128235;</div><p>Sin más eventos este mes</p></div>';
+
+  } else {
+    // Sin día seleccionado: ocultar panel, mostrar próximos eventos futuros
+    panel.classList.remove('open');
+    const ts=todayStr();
+    const futureEnd=dateStr(new Date(Date.now()+120*864e5));
+    let upcoming=getEventsForRange(ts,futureEnd);
+    if(activeFilter!=='todos') upcoming=upcoming.filter(e=>e.cat===activeFilter);
+    if(upcomingLabelEl) upcomingLabelEl.textContent='Próximos eventos';
+    document.getElementById('upcomingEvents').innerHTML=upcoming.slice(0,15).length
+      ?upcoming.slice(0,15).map(e=>eventCardHTML(e,true)).join('')
+      :'<div class="empty"><div class="emoji">&#128235;</div><p>Sin eventos próximos</p></div>';
+  }
 }
+
 
 window.selectCalDay=(ds)=>{
   selectedCalDay=selectedCalDay===ds?null:ds;
