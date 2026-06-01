@@ -535,31 +535,63 @@ function dateStr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(
 function todayStr(){ return dateStr(new Date()); }
 
 function expandRecurring(ev, viewStart, viewEnd) {
-  if(!ev.recur||ev.recur==='none') return [ev];
+
+  // ✅ FIX CLAVE: FILTRAR EVENTOS NO RECURRENTES
+  if(!ev.recur || ev.recur === 'none') {
+    if(ev.date >= viewStart && ev.date <= viewEnd) {
+      return [ev];
+    }
+    return [];
+  }
+
   const results=[];
   const start=new Date(ev.date+'T12:00:00');
   const end=ev.recurEnd?new Date(ev.recurEnd+'T12:00:00'):new Date('2099-12-31');
   const vs=new Date(viewStart+'T00:00:00');
   const ve=new Date(viewEnd+'T23:59:59');
-  let cur=new Date(start); let safety=0;
-  while(cur<=end&&cur<=ve&&safety<500){
+
+  let cur=new Date(start);
+  let safety=0;
+
+  while(cur<=end && cur<=ve && safety<500){
     safety++;
-    if(cur>=vs) results.push({...ev,date:dateStr(cur),_virtual:true});
+
+    if(cur>=vs){
+      results.push({...ev,date:dateStr(cur),_virtual:true});
+    }
+
     if(ev.recur==='weekly'){
-      if(ev.recurDays&&ev.recurDays.length>0){
+      if(ev.recurDays && ev.recurDays.length>0){
         let found=false;
         for(let d=1;d<=7;d++){
-          const next=new Date(cur); next.setDate(cur.getDate()+d);
-          if(next>end||next>ve) break;
-          if(ev.recurDays.includes(next.getDay())){cur=next;found=true;break;}
+          const next=new Date(cur);
+          next.setDate(cur.getDate()+d);
+
+          if(next>end || next>ve) break;
+
+          if(ev.recurDays.includes(next.getDay())){
+            cur=next;
+            found=true;
+            break;
+          }
         }
         if(!found) break;
-      } else { cur.setDate(cur.getDate()+7); }
-    } else if(ev.recur==='biweekly'){ cur.setDate(cur.getDate()+14); }
-    else if(ev.recur==='monthly'){ cur.setMonth(cur.getMonth()+1); }
-    else if(ev.recur==='yearly'){ cur.setFullYear(cur.getFullYear()+1); }
+      } else {
+        cur.setDate(cur.getDate()+7);
+      }
+    }
+    else if(ev.recur==='biweekly'){
+      cur.setDate(cur.getDate()+14);
+    }
+    else if(ev.recur==='monthly'){
+      cur.setMonth(cur.getMonth()+1);
+    }
+    else if(ev.recur==='yearly'){
+      cur.setFullYear(cur.getFullYear()+1);
+    }
     else break;
   }
+
   return results;
 }
 
@@ -915,9 +947,6 @@ window.showScreen=(name,btn)=>{
 
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
 window.showToast=showToast;
-
-
-
 </script>
 </body>
 </html>
