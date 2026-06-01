@@ -909,4 +909,74 @@ window.changeMonth=(dir)=>{ calDate.setMonth(calDate.getMonth()+dir); renderCale
 
 window.showScreen=(name,btn)=>{
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById('screen-'+name).classLis
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+};
+
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
+window.showToast=showToast;
+
+
+// ── NOTIFICACIONES PUSH ──
+const VAPID_PUBLIC_KEY = 'BFrPcQTylLrhfTvWwV1JAz6ruxj9Quoc3Y4Jm5YWwcYJgkcxAhBtEkEqNf3m11yhz9W2MVoU1JFK3fSLCfw8g3I';
+
+function urlBase64ToUint8Array(b64) {
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const base64 = (b64 + pad).replace(/-/g,'+').replace(/_/g,'/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function initNotifications() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const reg = await navigator.serviceWorker.register('/family-hub/service-worker.js');
+    if (Notification.permission === 'default') {
+      document.getElementById('notifBtn').style.display = 'block';
+    } else if (Notification.permission === 'granted') {
+      savePushSubscription(reg);
+    }
+  } catch(e) { console.log('SW error:', e); }
+}
+
+window.requestNotifPermission = async () => {
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    document.getElementById('notifBtn').style.display = 'none';
+    const reg = await navigator.serviceWorker.ready;
+    await savePushSubscription(reg);
+    showToast('🔔 Notificaciones activadas ✓');
+  } else {
+    showToast('❌ Permiso denegado');
+  }
+};
+
+async function savePushSubscription(reg) {
+  try {
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+    const j = sub.toJSON();
+    // Usar el db ya inicializado en el módulo principal
+    const { collection, addDoc, query, where, getDocs, deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const q = query(collection(db, 'pushSubscriptions'), where('endpoint', '==', j.endpoint));
+    const snap = await getDocs(q);
+    snap.forEach(d => deleteDoc(doc(db, 'pushSubscriptions', d.id)));
+    await addDoc(collection(db, 'pushSubscriptions'), {
+      endpoint: j.endpoint,
+      p256dh: j.keys.p256dh,
+      auth: j.keys.auth,
+      ts: new Date().toISOString()
+    });
+    console.log('Push subscription saved');
+  } catch(e) { console.log('Push sub error:', e); }
+}
+
+</script>
+</body>
+</html>
