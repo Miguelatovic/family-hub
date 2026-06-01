@@ -962,21 +962,22 @@ async function savePushSubscription(reg) {
       });
     }
     const j = sub.toJSON();
-    // Usar el db ya inicializado en el módulo principal
-    const { collection, addDoc, query, where, getDocs, deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-    const q = query(collection(db, 'pushSubscriptions'), where('endpoint', '==', j.endpoint));
-    const snap = await getDocs(q);
-    snap.forEach(d => deleteDoc(doc(db, 'pushSubscriptions', d.id)));
-    await addDoc(collection(db, 'pushSubscriptions'), {
-      endpoint: j.endpoint,
-      p256dh: j.keys.p256dh,
-      auth: j.keys.auth,
-      ts: new Date().toISOString()
+    // Guardar via REST API de Firestore (sin SDK para evitar conflictos)
+    const url = 'https://firestore.googleapis.com/v1/projects/family-hub-65434/databases/(default)/documents/pushSubscriptions';
+    const body = JSON.stringify({
+      fields: {
+        endpoint: { stringValue: j.endpoint },
+        p256dh:   { stringValue: j.keys.p256dh },
+        auth:     { stringValue: j.keys.auth },
+        ts:       { stringValue: new Date().toISOString() }
+      }
     });
-    console.log('Push subscription saved');
-  } catch(e) { console.log('Push sub error:', e); }
-}
-
-</script>
-</body>
-</html>
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body
+    });
+    if (res.ok) {
+      console.log('Push subscription saved OK');
+    } else {
+      const err = await res.text();
