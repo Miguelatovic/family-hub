@@ -250,6 +250,7 @@ h1,h2,h3,h4{font-family:'Nunito',sans-serif}
     <div class="header-right">
       <div class="avatars" id="userAvatars"></div>
       <div class="sync-pill"><div class="sync-dot"></div>Sincronizado</div>
+      <button id="notifBtn" onclick="requestNotifPermission()" style="display:none;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:4px 10px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.8);cursor:pointer;">🔔 Activar alertas</button>
     </div>
   </div>
 </div>
@@ -535,63 +536,31 @@ function dateStr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(
 function todayStr(){ return dateStr(new Date()); }
 
 function expandRecurring(ev, viewStart, viewEnd) {
-
-  // ✅ FIX CLAVE: FILTRAR EVENTOS NO RECURRENTES
-  if(!ev.recur || ev.recur === 'none') {
-    if(ev.date >= viewStart && ev.date <= viewEnd) {
-      return [ev];
-    }
-    return [];
-  }
-
+  if(!ev.recur||ev.recur==='none') return [ev];
   const results=[];
   const start=new Date(ev.date+'T12:00:00');
   const end=ev.recurEnd?new Date(ev.recurEnd+'T12:00:00'):new Date('2099-12-31');
   const vs=new Date(viewStart+'T00:00:00');
   const ve=new Date(viewEnd+'T23:59:59');
-
-  let cur=new Date(start);
-  let safety=0;
-
-  while(cur<=end && cur<=ve && safety<500){
+  let cur=new Date(start); let safety=0;
+  while(cur<=end&&cur<=ve&&safety<500){
     safety++;
-
-    if(cur>=vs){
-      results.push({...ev,date:dateStr(cur),_virtual:true});
-    }
-
+    if(cur>=vs) results.push({...ev,date:dateStr(cur),_virtual:true});
     if(ev.recur==='weekly'){
-      if(ev.recurDays && ev.recurDays.length>0){
+      if(ev.recurDays&&ev.recurDays.length>0){
         let found=false;
         for(let d=1;d<=7;d++){
-          const next=new Date(cur);
-          next.setDate(cur.getDate()+d);
-
-          if(next>end || next>ve) break;
-
-          if(ev.recurDays.includes(next.getDay())){
-            cur=next;
-            found=true;
-            break;
-          }
+          const next=new Date(cur); next.setDate(cur.getDate()+d);
+          if(next>end||next>ve) break;
+          if(ev.recurDays.includes(next.getDay())){cur=next;found=true;break;}
         }
         if(!found) break;
-      } else {
-        cur.setDate(cur.getDate()+7);
-      }
-    }
-    else if(ev.recur==='biweekly'){
-      cur.setDate(cur.getDate()+14);
-    }
-    else if(ev.recur==='monthly'){
-      cur.setMonth(cur.getMonth()+1);
-    }
-    else if(ev.recur==='yearly'){
-      cur.setFullYear(cur.getFullYear()+1);
-    }
+      } else { cur.setDate(cur.getDate()+7); }
+    } else if(ev.recur==='biweekly'){ cur.setDate(cur.getDate()+14); }
+    else if(ev.recur==='monthly'){ cur.setMonth(cur.getMonth()+1); }
+    else if(ev.recur==='yearly'){ cur.setFullYear(cur.getFullYear()+1); }
     else break;
   }
-
   return results;
 }
 
@@ -941,12 +910,4 @@ window.changeMonth=(dir)=>{ calDate.setMonth(calDate.getMonth()+dir); renderCale
 window.showScreen=(name,btn)=>{
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-};
-
-function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
-window.showToast=showToast;
-</script>
-</body>
-</html>
+  document.querySelectorAll('.nav-btn').for
