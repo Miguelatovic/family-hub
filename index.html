@@ -501,7 +501,7 @@ onAuthStateChanged(auth, user => {
     document.getElementById('authScreen').style.display='none';
     ['mainHeader','mainContent','fabBtn','bottomNav'].forEach(id=>document.getElementById(id).style.display=id==='mainContent'?'block':id==='fabBtn'?'flex':'flex');
     document.getElementById('mainContent').style.display='block';
-    setupUI(user); subscribeData();
+    setupUI(user); subscribeData(); window._initNotifWhenReady && window._initNotifWhenReady();
   } else {
     document.getElementById('authScreen').style.display='flex';
     ['mainHeader','mainContent','fabBtn','bottomNav'].forEach(id=>document.getElementById(id).style.display='none');
@@ -909,5 +909,4 @@ window.changeMonth=(dir)=>{ calDate.setMonth(calDate.getMonth()+dir); renderCale
 
 window.showScreen=(name,btn)=>{
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById('screen-'+name).classList.add('active');
-  document.querySelectorAll('.nav-btn').for
+  document.getElementById('screen-'+name).classLis
