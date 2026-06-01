@@ -250,7 +250,6 @@ h1,h2,h3,h4{font-family:'Nunito',sans-serif}
     <div class="header-right">
       <div class="avatars" id="userAvatars"></div>
       <div class="sync-pill"><div class="sync-dot"></div>Sincronizado</div>
-      <button id="notifBtn" onclick="requestNotifPermission()" style="display:none;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:4px 10px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.8);cursor:pointer;">🔔 Activar alertas</button>
     </div>
   </div>
 </div>
@@ -501,7 +500,7 @@ onAuthStateChanged(auth, user => {
     document.getElementById('authScreen').style.display='none';
     ['mainHeader','mainContent','fabBtn','bottomNav'].forEach(id=>document.getElementById(id).style.display=id==='mainContent'?'block':id==='fabBtn'?'flex':'flex');
     document.getElementById('mainContent').style.display='block';
-    setupUI(user); subscribeData(); window._initNotifWhenReady && window._initNotifWhenReady();
+    setupUI(user); subscribeData();
   } else {
     document.getElementById('authScreen').style.display='flex';
     ['mainHeader','mainContent','fabBtn','bottomNav'].forEach(id=>document.getElementById(id).style.display='none');
@@ -918,66 +917,7 @@ function showToast(msg){ const t=document.getElementById('toast'); t.textContent
 window.showToast=showToast;
 
 
-// ── NOTIFICACIONES PUSH ──
-const VAPID_PUBLIC_KEY = 'BFrPcQTylLrhfTvWwV1JAz6ruxj9Quoc3Y4Jm5YWwcYJgkcxAhBtEkEqNf3m11yhz9W2MVoU1JFK3fSLCfw8g3I';
 
-function urlBase64ToUint8Array(b64) {
-  const pad = '='.repeat((4 - b64.length % 4) % 4);
-  const base64 = (b64 + pad).replace(/-/g,'+').replace(/_/g,'/');
-  const raw = atob(base64);
-  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
-}
-
-async function initNotifications() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-  try {
-    const reg = await navigator.serviceWorker.register('/family-hub/service-worker.js');
-    if (Notification.permission === 'default') {
-      document.getElementById('notifBtn').style.display = 'block';
-    } else if (Notification.permission === 'granted') {
-      savePushSubscription(reg);
-    }
-  } catch(e) { console.log('SW error:', e); }
-}
-
-window.requestNotifPermission = async () => {
-  const perm = await Notification.requestPermission();
-  if (perm === 'granted') {
-    document.getElementById('notifBtn').style.display = 'none';
-    const reg = await navigator.serviceWorker.ready;
-    await savePushSubscription(reg);
-    showToast('🔔 Notificaciones activadas ✓');
-  } else {
-    showToast('❌ Permiso denegado');
-  }
-};
-
-async function savePushSubscription(reg) {
-  try {
-    let sub = await reg.pushManager.getSubscription();
-    if (!sub) {
-      sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-      });
-    }
-    const j = sub.toJSON();
-    // Guardar via REST API de Firestore (sin SDK para evitar conflictos)
-    const url = 'https://firestore.googleapis.com/v1/projects/family-hub-65434/databases/(default)/documents/pushSubscriptions';
-    const body = JSON.stringify({
-      fields: {
-        endpoint: { stringValue: j.endpoint },
-        p256dh:   { stringValue: j.keys.p256dh },
-        auth:     { stringValue: j.keys.auth },
-        ts:       { stringValue: new Date().toISOString() }
-      }
-    });
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body
-    });
-    if (res.ok) {
-      console.log('Push subscription saved OK');
-    } else {
-      const err = await res.text();
+</script>
+</body>
+</html>
